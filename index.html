@@ -6,25 +6,30 @@
 <style>
 /* Layout: single mobile-first column — today's ring summary, add-food card (plate photo / barcode / TACO search) feeding one meal draft, meal log, 7-day strip */
 :root{
-  --bg:#f3f5ef; --surface:#ffffff; --ink:#1d2a22; --muted:#5f6d63; --line:#dde3d8;
-  --accent:#2f6b4a; --accent-ink:#ffffff; --citrus:#e0a526; --soft:#e6eee3; --warn:#b4532e;
+  /* Paleta piquenique: amarelo-manteiga (fundo), azul aquarela (principal), vermelho (detalhes) */
+  --bg:#fbf3dc; --surface:#fffdf7; --ink:#1f2a44; --muted:#5b6479; --line:#ecdfbb;
+  --accent:#2b5fae; --accent-ink:#ffffff; --citrus:#e2ad3f; --soft:#f7ecca; --warn:#c0261b;
+  --red:#c0261b; --blue-soft:#e3ebf7; --gingham:rgb(236 190 86 / .17);
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#121814; --surface:#1a221d; --ink:#e7eee8; --muted:#9aa89e; --line:#2b362f;
-  --accent:#6fbf8f; --accent-ink:#0f1a13; --citrus:#f0bd4a; --soft:#223028; --warn:#e78a63; color-scheme:dark}}
+  --bg:#0f1829; --surface:#172338; --ink:#eef1f7; --muted:#a6b0c4; --line:#2b3a55;
+  --accent:#8ab2f2; --accent-ink:#0c1526; --citrus:#f0c95e; --soft:#22314b; --warn:#f2796c;
+  --red:#f2796c; --blue-soft:#1f3150; --gingham:rgb(240 201 94 / .045); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#121814; --surface:#1a221d; --ink:#e7eee8; --muted:#9aa89e; --line:#2b362f;
-  --accent:#6fbf8f; --accent-ink:#0f1a13; --citrus:#f0bd4a; --soft:#223028; --warn:#e78a63; color-scheme:dark}
+  --bg:#0f1829; --surface:#172338; --ink:#eef1f7; --muted:#a6b0c4; --line:#2b3a55;
+  --accent:#8ab2f2; --accent-ink:#0c1526; --citrus:#f0c95e; --soft:#22314b; --warn:#f2796c;
+  --red:#f2796c; --blue-soft:#1f3150; --gingham:rgb(240 201 94 / .045); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+body{background-color:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
+  background-image:repeating-linear-gradient(0deg,var(--gingham) 0 26px,transparent 26px 52px),repeating-linear-gradient(90deg,var(--gingham) 0 26px,transparent 26px 52px)}
 .wrap{max-width:560px;margin:0 auto;padding-block:20px 48px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   display:flex;flex-direction:column;gap:20px}
 h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
-h1{font-size:1.7rem}
+h1{font-size:1.7rem;color:var(--red)}
 h2{font-size:1.15rem}
 .num{font-variant-numeric:tabular-nums}
 .muted{color:var(--muted)}
@@ -32,18 +37,21 @@ h2{font-size:1.15rem}
 .label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
 button,select,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label.btn:focus-within{outline:2px solid var(--citrus);outline-offset:2px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center}
-.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label.btn:focus-within{outline:2px solid var(--red);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;box-shadow:0 2px 0 color-mix(in srgb,var(--accent) 60%,#000)}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn.ghost{background:var(--surface);color:var(--accent);border:1.5px solid color-mix(in srgb,var(--accent) 35%,var(--line));box-shadow:none}
 .btn.sm{padding:7px 12px;font-size:.85rem;border-radius:10px}
 .btn:disabled{opacity:.5;cursor:default}
 .iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;width:36px;height:36px;display:grid;place-items:center}
 
-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative;padding-bottom:20px}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;border-radius:3px;
+  background:conic-gradient(var(--red) 25%,transparent 0 50%,var(--red) 0 75%,transparent 0) 0 0/12px 12px}
 .daynav{display:flex;align-items:center;gap:8px}
 .daynav .d{min-width:110px;text-align:center;font-weight:600}
 
-.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 24px -18px rgb(31 42 68 / .35)}
 .summary{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
 .ring{position:relative;width:132px;height:132px}
 .ring svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -60,9 +68,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:12px;fl
 .capture{display:flex;flex-direction:column;gap:14px}
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--soft);padding:4px;border-radius:12px}
 .tabs button{border:0;background:transparent;border-radius:9px;padding:8px 4px;font-weight:600;font-size:.84rem;color:var(--muted);line-height:1.2}
-.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .08)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:inset 0 -2px 0 var(--red),0 1px 2px rgb(0 0 0 / .08)}
 .panel{display:flex;flex-direction:column;gap:12px}
-.drop{border:2px dashed var(--line);border-radius:14px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.drop{border:2px dashed color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:14px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
 .drop.has{padding:0;border-style:solid;overflow:hidden}
 .drop img{width:100%;max-height:300px;object-fit:cover;display:block}
 .plate-ico{width:52px;height:52px}
@@ -111,14 +119,15 @@ textarea{resize:vertical;min-height:44px}
 .tablewrap{overflow-x:auto}
 .total{display:flex;justify-content:space-between;align-items:baseline;font-weight:600}
 .total .k{font-family:var(--display);font-size:1.4rem}
-.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:600;background:var(--soft);color:var(--accent);white-space:nowrap}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:600;background:var(--blue-soft);color:var(--accent);white-space:nowrap}
 .pill.baixa{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
 .pill.media{background:color-mix(in srgb,var(--citrus) 22%,transparent);color:var(--ink)}
 
 .log{display:flex;flex-direction:column;gap:10px}
 .meal{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
 .meal img,.meal .ph{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--soft)}
-.meal .ph{display:grid;place-items:center;color:var(--accent);font-family:var(--display);font-weight:700;font-size:1.4rem}
+.meal .ph,.rcard .ph{background-color:var(--soft);background-image:repeating-linear-gradient(0deg,var(--gingham) 0 8px,transparent 8px 16px),repeating-linear-gradient(90deg,var(--gingham) 0 8px,transparent 8px 16px)}
+.meal .ph{display:grid;place-items:center;color:var(--red);font-family:var(--display);font-weight:700;font-size:1.4rem}
 .meal .t{font-weight:600;overflow-wrap:anywhere}
 .meal .k{font-family:var(--display);font-weight:700;font-size:1.15rem;text-align:right}
 .meal details{grid-column:1/-1;font-size:.84rem;color:var(--muted)}
@@ -134,7 +143,7 @@ textarea{resize:vertical;min-height:44px}
 .rlist{display:flex;flex-direction:column;gap:10px}
 .rcard{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:10px;background:var(--bg)}
 .rcard img,.rcard .ph{width:72px;height:72px;border-radius:10px;object-fit:cover;background:var(--soft)}
-.rcard .ph{display:grid;place-items:center;color:var(--accent);font-family:var(--display);font-weight:700;font-size:1.5rem}
+.rcard .ph{display:grid;place-items:center;color:var(--red);font-family:var(--display);font-weight:700;font-size:1.5rem}
 .rcard .t{font-weight:600;overflow-wrap:anywhere}
 .ract{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .ract .rq{width:70px;padding:6px 8px}
@@ -219,7 +228,7 @@ textarea{resize:vertical;min-height:44px}
 
     <div class="panel" id="p-prato" role="tabpanel">
       <div class="drop" id="drop">
-        <svg class="plate-ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="32" cy="32" r="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".5"/><path d="M6 10v14M10 10v14M8 24v30" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M56 10c-4 0-5 6-5 12s2 6 5 6v26" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+        <svg class="plate-ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--red)" stroke-width="3"/><circle cx="32" cy="32" r="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".6"/><path d="M6 10v14M10 10v14M8 24v30" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M56 10c-4 0-5 6-5 12s2 6 5 6v26" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
         <div>Tire uma foto do prato de cima, com o prato inteiro visível.</div>
         <div class="row" style="width:100%;justify-content:center"><label class="btn" for="cam">Tirar foto</label><label class="btn ghost" for="photo">Escolher da galeria</label></div>
       </div>
@@ -926,7 +935,7 @@ Responda SOMENTE com JSON:
     const W=340,H=150,top=14,bot=26,bw=30,gap=(W-7*bw)/7;
     const sy = v => top + (H-top-bot)*(1-v/max);
     let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calorias por dia nos últimos 7 dias">`;
-    s += `<line x1="0" x2="${W}" y1="${sy(goal)}" y2="${sy(goal)}" stroke="var(--citrus)" stroke-dasharray="4 4" stroke-width="1.5"/>`;
+    s += `<line x1="0" x2="${W}" y1="${sy(goal)}" y2="${sy(goal)}" stroke="var(--red)" stroke-dasharray="4 4" stroke-width="1.5"/>`;
     s += `<text x="${W-2}" y="${sy(goal)-4}" text-anchor="end" font-size="10" fill="var(--muted)">meta ${fmt(goal)}</text>`;
     days.forEach((d,i) => {
       const x = gap/2 + i*(bw+gap), v = vals[i], y = sy(v), sel = i===6;
