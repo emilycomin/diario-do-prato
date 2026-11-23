@@ -41,6 +41,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;box-shadow:0 2px 0 color-mix(in srgb,var(--accent) 60%,#000)}
 .btn:active{transform:translateY(1px);box-shadow:none}
 .btn.ghost{background:var(--surface);color:var(--accent);border:1.5px solid color-mix(in srgb,var(--accent) 35%,var(--line));box-shadow:none}
+.btn{text-decoration:none}
 .btn.sm{padding:7px 12px;font-size:.85rem;border-radius:10px}
 .btn:disabled{opacity:.5;cursor:default}
 .iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;width:36px;height:36px;display:grid;place-items:center}
@@ -276,6 +277,15 @@ body{position:relative;overflow-x:hidden}
       <div class="field"><label class="label" for="hint">Detalhes (opcional)</label>
         <textarea id="hint" rows="1" placeholder="ex.: arroz integral, frango grelhado no azeite"></textarea></div>
       <button class="btn" id="analyze" disabled>Calcular calorias</button>
+      <div class="drop claude-only" id="claudeOnly" hidden>
+        <img class="ilu plate-ico" src="img/torrada.png" alt="">
+        <div>A análise da foto do prato usa o Claude e só funciona no Diário do Prato aberto dentro do Claude.</div>
+        <div class="small muted">Por aqui, você pode adicionar a comida pela busca de alimentos ou pelo código de barras.</div>
+        <div class="row" style="width:100%;justify-content:center">
+          <a class="btn" id="openClaude" href="https://claude.ai/artifact/9NBmsB2d9dq5Q3VeUWZYjH" target="_blank" rel="noopener">Abrir no Claude</a>
+          <button class="btn ghost" id="goTaco" type="button">Buscar alimento</button>
+        </div>
+      </div>
     </div>
 
     <div class="panel" id="p-barras" role="tabpanel" hidden>
@@ -608,7 +618,8 @@ body{position:relative;overflow-x:hidden}
     if (sample) caps = await sample.limits().catch(()=>null);
     if (!sample || !caps?.images) {
       sample = null;
-      say("A leitura de fotos pelo Claude não está disponível nesta visualização. A busca na TACO e por código digitado continuam funcionando.");
+      $("drop").hidden = true; $("hint").closest(".field").hidden = true; $("analyze").hidden = true;
+      $("claudeOnly").hidden = false; $("openClaude").hidden = !!window.claude;
     }
     $("analyze").disabled = !(sample && plateBlob);
   }
@@ -774,6 +785,8 @@ ${tacoList}`;
     } catch (e) { claudeErr(e, "analisar a foto"); }
     finally { $("analyze").disabled = !plateBlob; }
   });
+
+  $("goTaco").onclick = () => $("tab-taco").click();
 
   // ---------- 2. barcode ----------
   let zxP = null;
