@@ -389,7 +389,7 @@ body{position:relative;overflow-x:hidden}
   </div>
 
   <div class="doodles" aria-hidden="true"><img class="ilu" src="img/tacas-champanhe.png" alt="" style="height:64px"><img class="ilu" src="img/salud.png" alt="" style="height:34px"></div>
-  <p class="note">Fontes: Tabela TACO (NEPA/Unicamp, 4ª ed.), Open Food Facts (cópia dos produtos vendidos no Brasil, novembro de 2026) e leitura do rótulo pelo Claude. Pela foto do prato, porções, óleo e molhos são estimados: ajuste os gramas se souber o peso. Não substitui orientação de nutricionista.</p>
+  <p class="note">Fontes: Tabela TACO (NEPA/Unicamp, 4ª ed.), Open Food Facts (cópia dos produtos vendidos no Brasil, novembro de 2026) e leitura do rótulo pela IA (Claude dentro do Claude; Gemini fora dele). Pela foto do prato, porções, óleo e molhos são estimados: ajuste os gramas se souber o peso. Não substitui orientação de nutricionista.</p>
 </div>
 
 <script>
@@ -515,6 +515,19 @@ body{position:relative;overflow-x:hidden}
         render(); renderRecipes(); say("");
       } catch (e) { say("Não consegui carregar o diário (" + (e.code || "erro") + "). Recarregue a página.", true); }
     }
+    const blobToB64 = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = rej; r.readAsDataURL(b); });
+    const gemini = {
+      async limits(){ return {images:true}; },
+      async json(prompt, opts = {}){
+        const images = await Promise.all((opts.images || []).map(async b => ({mime: b.type || "image/jpeg", data: await blobToB64(b)})));
+        const { data, error } = await sb.functions.invoke("analisar", {body:{prompt, images}, signal: opts.signal});
+        if (error) {
+          let code = "error"; try { code = (await error.context.json()).error || code; } catch {}
+          const e = new Error(code); e.code = code; throw e;
+        }
+        return data?.data;
+      }
+    };
     async function reloadRecipes(){ recipes = chk(await sb.from("recipes").select("*")); renderRecipes(); }
 
     sb.auth.onAuthStateChange((ev, session) => {
@@ -522,12 +535,14 @@ body{position:relative;overflow-x:hidden}
       const u = session?.user || null;
       if (!u) {
         uid = null; recovering = false; meals = []; recipes = []; goal = 2000; render(); renderRecipes();
+        if (sample === gemini) { sample = null; photoUI(false); }
         if (authMode === "reset") setAuthMode("login");
         showAuth(true); return;
       }
       if (recovering) return;
       $("acctEmail").textContent = u.email || "";
       showAuth(false);
+      if (!sample) { sample = gemini; aiName = "Gemini"; photoUI(true); }
       if (u.id !== uid) { uid = u.id; setTimeout(loadAll, 0); }
     });
 
@@ -616,18 +631,27 @@ body{position:relative;overflow-x:hidden}
     let caps = null;
     try { sample = await claude.use("sample"); } catch {}
     if (sample) caps = await sample.limits().catch(()=>null);
-    if (!sample || !caps?.images) {
-      sample = null;
-      $("drop").hidden = true; $("hint").closest(".field").hidden = true; $("analyze").hidden = true;
-      $("claudeOnly").hidden = false; $("openClaude").hidden = !!window.claude;
-    }
+    if (!sample || !caps?.images) { sample = null; photoUI(false); }
     $("analyze").disabled = !(sample && plateBlob);
+  }
+  function photoUI(on){
+    $("drop").hidden = !on; $("hint").closest(".field").hidden = !on; $("analyze").hidden = !on;
+    $("claudeOnly").hidden = on; $("openClaude").hidden = !!window.claude;
+    $("analyze").disabled = !(sample && plateBlob);
+  }
+  let aiName = "Claude";
+  function aiMsg(e, fallback){
+    const c = e?.code;
+    return c === "not_granted" ? "Você não permitiu o uso do " + aiName + " nesta página." :
+      c === "rate_limited" ? "Muitas análises seguidas. Espere um minuto e tente de novo." :
+      c === "missing_key" ? "A análise de fotos ainda não foi configurada: falta a chave do Gemini no Supabase." :
+      c === "invalid_key" ? "A chave do Gemini configurada no Supabase foi recusada. Confira a chave." :
+      c === "not_signed_in" ? "Sua sessão expirou. Saia e entre de novo." :
+      c === "gemini_error" ? "O Gemini não respondeu agora. Tente de novo em instantes." : fallback;
   }
   function claudeErr(e, what){
     if (e?.code === "cancelled") return;
-    say(e?.code === "not_granted" ? "Você não permitiu o uso do Claude nesta página." :
-        e?.code === "rate_limited" ? "Muitas análises seguidas. Espere um minuto e tente de novo." :
-        "Não consegui " + what + ". Tente de novo com uma foto mais nítida.", true);
+    say(aiMsg(e, "Não consegui " + what + ". Tente de novo com uma foto mais nítida."), true);
   }
 
   // ---------- data: TACO + Open Food Facts ----------
@@ -775,7 +799,7 @@ ${tacoList}`;
       const itens = (Array.isArray(out?.itens) ? out.itens : []).map(i => {
         const t = byId.get(Number(i.taco_id)); const gr = +i.gramas || 0;
         return t ? mkItem(String(i.nome||t.nome), gr, {kcal:t.kcal,p:t.p,c:t.c,g:t.g}, "TACO: " + t.nome)
-                 : mkItem(String(i.nome||"Item"), gr, null, "Estimativa do Claude", {kcal:+i.kcal||0, p:+i.proteina||0, c:+i.carbo||0, g:+i.gordura||0});
+                 : mkItem(String(i.nome||"Item"), gr, null, "Estimativa do " + aiName, {kcal:+i.kcal||0, p:+i.proteina||0, c:+i.carbo||0, g:+i.gordura||0});
       });
       ensureDraft();
       draft.confianca = ["alta","media","baixa"].includes(out?.confianca) ? out.confianca : "media";
@@ -846,7 +870,7 @@ ${tacoList}`;
     pendingCode = code;
     $("labelCode").textContent = "Código " + code;
     $("labelAsk").hidden = false;
-    say(sample ? "" : "A leitura do rótulo precisa do Claude, que não está disponível nesta visualização.", !sample);
+    say(sample ? "" : "A leitura do rótulo precisa do " + aiName + ", que não está disponível nesta visualização.", !sample);
   }
 
   async function onLabelFile(f){
@@ -1148,7 +1172,7 @@ Responda SOMENTE com JSON:
   $("rPorc").oninput = recTotals; $("rPeso").oninput = recTotals;
 
   async function parseRecipe(text, blob){
-    if (!sample) { rsay("O cálculo pelo Claude não está disponível nesta visualização. Adicione os ingredientes pela busca na TACO.", true); return; }
+    if (!sample) { rsay("O cálculo pelo " + aiName + " não está disponível nesta visualização. Adicione os ingredientes pela busca na TACO.", true); return; }
     if (!text && !blob) { rsay("Escreva ou cole os ingredientes primeiro.", true); $("rTxt").focus(); return; }
     await loadTaco();
     const tacoList = (taco||[]).map(t => t.id + "|" + t.nome).join("\n");
@@ -1170,7 +1194,7 @@ ${tacoList}`;
       const novos = (Array.isArray(out?.ingredientes) ? out.ingredientes : []).map(x => {
         const t = byId.get(Number(x.taco_id)), pv = x.por100 || {};
         const per100 = t ? {kcal:t.kcal, p:t.p, c:t.c, g:t.g} : {kcal:+pv.kcal||0, p:+pv.proteina||0, c:+pv.carbo||0, g:+pv.gordura||0};
-        const i = {nome:String(x.nome||"Ingrediente"), qtd:+x.qtd||0, unidade:String(x.unidade||""), gramas:0, per100, fonte: t ? "TACO: " + t.nome : "Estimativa do Claude", kcal:0,p:0,c:0,g:0};
+        const i = {nome:String(x.nome||"Ingrediente"), qtd:+x.qtd||0, unidade:String(x.unidade||""), gramas:0, per100, fonte: t ? "TACO: " + t.nome : "Estimativa do " + aiName, kcal:0,p:0,c:0,g:0};
         setGrams(i, +x.gramas||0); return i;
       });
       if (!novos.length) { rsay("Não encontrei ingredientes. Escreva um por linha, com a medida.", true); return; }
@@ -1184,9 +1208,7 @@ ${tacoList}`;
       rsay("Confira as medidas e os gramas de cada ingrediente. Se mudar a quantidade, as calorias se recalculam.");
     } catch (e) {
       if (e?.code === "cancelled") return;
-      rsay(e?.code === "not_granted" ? "Você não permitiu o uso do Claude nesta página." :
-           e?.code === "rate_limited" ? "Muitos cálculos seguidos. Espere um minuto e tente de novo." :
-           "Não consegui calcular. Tente de novo, com um ingrediente por linha.", true);
+      rsay(aiMsg(e, "Não consegui calcular. Tente de novo, com um ingrediente por linha."), true);
     } finally { $("rParse").disabled = false; }
   }
   $("rParse").onclick = () => parseRecipe($("rTxt").value.trim(), null);
@@ -1215,7 +1237,7 @@ ${tacoList}`;
       box.append(b);
     });
     const b = document.createElement("button"); b.type = "button";
-    b.innerHTML = `<span class="n"></span>`; b.querySelector(".n").textContent = `Calcular "${q}" com o Claude`;
+    b.innerHTML = `<span class="n"></span>`; b.querySelector(".n").textContent = `Calcular "${q}" com o ${aiName}`;
     b.onclick = () => { box.hidden = true; $("rAddQ").value = ""; parseRecipe(q, null); };
     box.append(b);
   }, 120); });

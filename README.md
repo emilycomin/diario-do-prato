@@ -15,10 +15,21 @@ Diário de refeições em português, numa página HTML única, sem etapa de bui
 
 A versão completa é o artifact no Claude, onde o app usa os recursos do Claude (`window.claude.use("sample" | "db" | "user")`) para analisar fotos e guardar os dados na sua conta.
 
-Fora do Claude (por exemplo, no GitHub Pages ou num servidor local), não há análise de fotos do prato, do rótulo ou de receitas escritas. A busca na TACO, o código de barras (lido pela câmera ou digitado) e o cálculo manual de receitas continuam funcionando. Onde os dados ficam depende do `config.js`:
+Fora do Claude (por exemplo, no GitHub Pages ou num servidor local), a análise de fotos usa o Gemini quando você está logado e a chave está configurada (veja abaixo); sem login no Supabase, não há análise de fotos. A busca na TACO, o código de barras (lido pela câmera ou digitado) e o cálculo manual de receitas continuam funcionando. Onde os dados ficam depende do `config.js`:
 
 - **Com `config.js` (padrão deste repositório):** o app pede login com e-mail e senha e guarda tudo num banco **Supabase** (Postgres). O diário fica igual em qualquer aparelho em que você entrar.
 - **Sem `config.js`:** o app entra em **modo local**, e os registros ficam só no navegador (`localStorage`).
+
+### Análise de fotos fora do Claude (Gemini)
+
+Com login, a versão do GitHub Pages analisa a foto do prato, o rótulo e a receita escrita com o **Gemini**, do Google. O app envia a foto para a função `analisar` do Supabase ([`supabase/functions/analisar/index.ts`](supabase/functions/analisar/index.ts)). A função confere o login e chama a API do Gemini com a chave guardada no servidor, que nunca aparece no site.
+
+Configuração (uma vez):
+1. Crie uma chave em [aistudio.google.com](https://aistudio.google.com/apikey).
+2. No painel do Supabase, em **Edge Functions → Secrets**, crie o secret `GEMINI_API_KEY` com essa chave.
+3. Opcional: o secret `GEMINI_MODEL` troca o modelo (o padrão é `gemini-flash-latest`).
+
+Sem a chave, o app avisa que a análise ainda não foi configurada.
 
 ### Banco de dados (Supabase)
 
