@@ -644,10 +644,11 @@ body{position:relative;overflow-x:hidden}
   function aiMsg(e, fallback){
     const c = e?.code;
     return c === "not_granted" ? "Você não permitiu o uso do " + aiName + " nesta página." :
-      c === "rate_limited" ? "Muitas análises seguidas. Espere um minuto e tente de novo." :
+      c === "rate_limited" ? "Muitas análises seguidas ou a cota grátis do dia acabou. Espere um pouco e tente de novo." :
       c === "missing_key" ? "A análise de fotos ainda não foi configurada: falta a chave do Gemini no Supabase." :
       c === "invalid_key" ? "A chave do Gemini configurada no Supabase foi recusada. Confira a chave." :
       c === "not_signed_in" ? "Sua sessão expirou. Saia e entre de novo." :
+      c === "gemini_busy" ? "O Gemini está sobrecarregado agora (o problema é do lado do Google). Tente de novo em alguns minutos." :
       c === "gemini_error" ? "O Gemini não respondeu agora. Tente de novo em instantes." :
       c === "gemini_timeout" || c === "timeout" ? "A análise demorou demais e foi cancelada. Tente de novo." : fallback;
   }

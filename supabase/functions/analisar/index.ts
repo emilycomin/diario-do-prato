@@ -46,30 +46,44 @@ Deno.serve(async (req: Request) => {
     parts.push({ inline_data: { mime_type: mime, data } });
   }
 
-  // 3. Chama o Gemini pedindo resposta em JSON.
-  const model = Deno.env.get("GEMINI_MODEL") || "gemini-flash-latest";
-  let r: Response;
-  try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts }],
-      generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
-    }),
-    signal: AbortSignal.timeout(90_000),
+  // 3. Chama o Gemini pedindo resposta em JSON. Se o modelo estiver sobrecarregado (503) ou sem cota (429),
+  //    tenta de novo e depois passa para um modelo mais leve.
+  const models = [...new Set([Deno.env.get("GEMINI_MODEL") || "gemini-flash-latest", "gemini-flash-lite-latest"])];
+  const payload = JSON.stringify({
+    contents: [{ role: "user", parts }],
+    generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
   });
-  } catch (e) {
-    console.error("gemini sem resposta", String(e));
-    return reply(504, { error: "gemini_timeout" });
+  const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+  let r: Response | null = null, lastStatus = 0, lastText = "";
+  outer: for (const model of models) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: payload,
+          signal: AbortSignal.timeout(45_000),
+        });
+      } catch (e) {
+        console.error("gemini sem resposta", model, String(e));
+        r = null; lastStatus = 504; break;            // tempo esgotado: tenta o próximo modelo
+      }
+      console.log("gemini respondeu", model, r.status);
+      if (r.ok) break outer;
+      lastStatus = r.status; lastText = await r.text();
+      console.error("gemini", model, r.status, lastText.slice(0, 500));
+      if (r.status === 404) break;                    // modelo não existe: próximo
+      if (r.status !== 503 && r.status !== 429 && r.status !== 500) break outer;
+      if (attempt === 1 && r.status !== 429) await sleep(1500);
+      else break;                                     // segunda falha ou sem cota: próximo modelo
+    }
   }
-  console.log("gemini respondeu", r.status);
-  if (r.status === 429) return reply(429, { error: "rate_limited" });
-  if (!r.ok) {
-    const t = await r.text();
-    console.error("gemini", r.status, t.slice(0, 800));
-    const invalid = (r.status === 400 || r.status === 403) && /api key|API_KEY|permission/i.test(t);
-    return reply(502, { error: invalid ? "invalid_key" : "gemini_error", status: r.status });
+  if (!r || !r.ok) {
+    if (lastStatus === 503 || lastStatus === 500) return reply(503, { error: "gemini_busy" });
+    if (lastStatus === 429) return reply(429, { error: "rate_limited" });
+    if (lastStatus === 504) return reply(504, { error: "gemini_timeout" });
+    const invalid = (lastStatus === 400 || lastStatus === 403) && /api key|API_KEY|permission/i.test(lastText);
+    return reply(502, { error: invalid ? "invalid_key" : "gemini_error", status: lastStatus });
   }
   const out = await r.json();
   const text: string = (out?.candidates?.[0]?.content?.parts ?? []).map((p: { text?: string }) => p.text ?? "").join("");
