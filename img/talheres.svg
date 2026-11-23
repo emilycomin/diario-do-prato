@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 120" fill="none" stroke-linecap="round" stroke-linejoin="round">
+<defs>
+<filter id="giz" x="-15%" y="-15%" width="130%" height="130%">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="13" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="3.2" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="1" seed="17" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.4 0 0 0 2.2" result="m"/>
+<feComposite in="d" in2="m" operator="in"/>
+</filter>
+<pattern id="hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><line x1="0" y1="0" x2="0" y2="5" stroke="#fff" stroke-opacity=".28" stroke-width="1.6"/></pattern>
+</defs>
+<g filter="url(#giz)">
+
+<path d="M28 110 L28 54" stroke="#d93713" stroke-width="4.5"/>
+<path d="M18 18 L18 42 C18 52 38 52 38 42 L38 18" stroke="#d93713" stroke-width="4"/>
+<path d="M24.5 18 L24.5 40 M31.5 18 L31.5 40" stroke="#d93713" stroke-width="3"/>
+<path d="M56 110 L56 56" stroke="#a82a0e" stroke-width="4.5"/>
+<path d="M56 56 C63 50 66 30 61 12 C52 24 50 42 56 56Z" fill="#d93713" fill-opacity=".35" stroke="#a82a0e" stroke-width="3.5"/>
+
+</g>
+</svg>

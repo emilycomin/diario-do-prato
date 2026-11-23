@@ -6,21 +6,21 @@
 <style>
 /* Layout: single mobile-first column — today's ring summary, add-food card (plate photo / barcode / TACO search) feeding one meal draft, meal log, 7-day strip */
 :root{
-  /* Paleta piquenique: amarelo-manteiga (fundo), azul aquarela (principal), vermelho (detalhes) */
-  --bg:#fbf3dc; --surface:#fffdf7; --ink:#1f2a44; --muted:#5b6479; --line:#ecdfbb;
-  --accent:#2b5fae; --accent-ink:#ffffff; --citrus:#e2ad3f; --soft:#f7ecca; --warn:#c0261b;
-  --red:#c0261b; --blue-soft:#e3ebf7; --gingham:rgb(236 190 86 / .17);
+  /* Paleta: creme #fff1d0 (fundo), azul-marinho #03045e (principal), vermelho #d93713 (detalhes); ilustrações em giz pastel em img/ */
+  --bg:#fff1d0; --surface:#fffaeb; --ink:#03045e; --muted:#4e5080; --line:#efd9a8;
+  --accent:#03045e; --accent-ink:#fff1d0; --citrus:#e8a33d; --soft:#fbe4b0; --warn:#d93713;
+  --red:#d93713; --blue-soft:#e6e6f4; --gingham:rgb(226 176 92 / .16);
   --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
   --body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0f1829; --surface:#172338; --ink:#eef1f7; --muted:#a6b0c4; --line:#2b3a55;
-  --accent:#8ab2f2; --accent-ink:#0c1526; --citrus:#f0c95e; --soft:#22314b; --warn:#f2796c;
-  --red:#f2796c; --blue-soft:#1f3150; --gingham:rgb(240 201 94 / .045); color-scheme:dark}}
+  --bg:#02033f; --surface:#0b0d55; --ink:#fff1d0; --muted:#c9c2ad; --line:#272a7a;
+  --accent:#fff1d0; --accent-ink:#03045e; --citrus:#f0b44f; --soft:#171a66; --warn:#ff6b42;
+  --red:#ff6b42; --blue-soft:#1c1f6e; --gingham:rgb(255 241 208 / .035); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0f1829; --surface:#172338; --ink:#eef1f7; --muted:#a6b0c4; --line:#2b3a55;
-  --accent:#8ab2f2; --accent-ink:#0c1526; --citrus:#f0c95e; --soft:#22314b; --warn:#f2796c;
-  --red:#f2796c; --blue-soft:#1f3150; --gingham:rgb(240 201 94 / .045); color-scheme:dark}
+  --bg:#02033f; --surface:#0b0d55; --ink:#fff1d0; --muted:#c9c2ad; --line:#272a7a;
+  --accent:#fff1d0; --accent-ink:#03045e; --citrus:#f0b44f; --soft:#171a66; --warn:#ff6b42;
+  --red:#ff6b42; --blue-soft:#1c1f6e; --gingham:rgb(255 241 208 / .035); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background-color:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
@@ -73,7 +73,18 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;b
 .drop{border:2px dashed color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:14px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
 .drop.has{padding:0;border-style:solid;overflow:hidden}
 .drop img{width:100%;max-height:300px;object-fit:cover;display:block}
-.plate-ico{width:52px;height:52px}
+.drop img.plate-ico{width:112px;height:auto;max-height:none;object-fit:contain}
+.ilu{display:block;height:auto;user-select:none;pointer-events:none}
+h1{display:flex;align-items:center;gap:6px}
+h1 .ilu{width:30px;margin-top:-10px;transform:rotate(8deg)}
+.empty .ilu{width:120px;margin:0 auto 8px}
+.doodles{display:flex;justify-content:center;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.doodles .ilu{height:46px;width:auto}
+.doodles .ilu:nth-child(odd){transform:rotate(-8deg)}.doodles .ilu:nth-child(even){transform:rotate(7deg)}
+.auth-doodles{justify-content:flex-start;margin-bottom:-4px}
+.auth-doodles .ilu{height:40px}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .ilu{background:#fff1d0;border-radius:14px;padding:6px}}
+:root[data-theme="dark"] .ilu{background:#fff1d0;border-radius:14px;padding:6px}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>*{flex:1 1 140px;min-width:0}
 .field{display:flex;flex-direction:column;gap:4px}
@@ -166,7 +177,7 @@ textarea{resize:vertical;min-height:44px}
 
 <div class="wrap">
   <header>
-    <h1>Diário do Prato</h1>
+    <h1>Diário do Prato <img class="ilu" src="img/flores.svg" alt=""></h1>
     <div class="daynav" id="daynav">
       <button class="iconbtn" id="prevDay" aria-label="Dia anterior">‹</button>
       <span class="d" id="dayLabel">Hoje</span>
@@ -177,6 +188,7 @@ textarea{resize:vertical;min-height:44px}
   <div class="acct small muted" id="acct" hidden><span id="acctEmail"></span><span aria-hidden="true">·</span><button class="linkbtn" id="signOut" type="button">Sair</button></div>
 
   <section class="card capture" id="authBox" aria-labelledby="authH" hidden>
+    <div class="doodles auth-doodles" aria-hidden="true"><img class="ilu" src="img/tomate.svg" alt=""><img class="ilu" src="img/taca.svg" alt=""><img class="ilu" src="img/limao.svg" alt=""><img class="ilu" src="img/camarao.svg" alt=""></div>
     <h2 id="authH">Entrar</h2>
     <p class="small muted hint" id="authHint">Entre com seu e-mail e senha para ver o seu diário em qualquer aparelho.</p>
     <form class="panel" id="authForm">
@@ -228,7 +240,7 @@ textarea{resize:vertical;min-height:44px}
 
     <div class="panel" id="p-prato" role="tabpanel">
       <div class="drop" id="drop">
-        <svg class="plate-ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--red)" stroke-width="3"/><circle cx="32" cy="32" r="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".6"/><path d="M6 10v14M10 10v14M8 24v30" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M56 10c-4 0-5 6-5 12s2 6 5 6v26" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+        <img class="ilu plate-ico" src="img/prato.svg" alt="">
         <div>Tire uma foto do prato de cima, com o prato inteiro visível.</div>
         <div class="row" style="width:100%;justify-content:center"><label class="btn" for="cam">Tirar foto</label><label class="btn ghost" for="photo">Escolher da galeria</label></div>
       </div>
@@ -289,7 +301,7 @@ textarea{resize:vertical;min-height:44px}
 
   <section class="log" aria-labelledby="logH">
     <h2 id="logH">Refeições do dia</h2>
-    <div id="mealList"><div class="empty">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div></div>
+    <div id="mealList"><div class="empty"><img class="ilu" src="img/torrada.svg" alt="">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div></div>
   </section>
 
   <section class="card week" aria-labelledby="weekH">
@@ -303,7 +315,7 @@ textarea{resize:vertical;min-height:44px}
     <section class="card rsec" id="recList" aria-labelledby="recH">
       <div class="dhead"><h2 id="recH">Minhas receitas</h2><button class="btn sm" id="recNew" type="button">Nova receita</button></div>
       <div class="status" id="rListStatus" role="status"></div>
-      <div class="rlist" id="recItems"><div class="empty">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div></div>
+      <div class="rlist" id="recItems"><div class="empty"><img class="ilu" src="img/azeitonas.svg" alt="" style="width:56px">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div></div>
     </section>
 
     <section class="card rsec" id="recEd" aria-labelledby="recEdH" hidden>
@@ -337,6 +349,7 @@ textarea{resize:vertical;min-height:44px}
     </section>
   </div>
 
+  <div class="doodles" aria-hidden="true"><img class="ilu" src="img/tomate.svg" alt=""><img class="ilu" src="img/talheres.svg" alt=""><img class="ilu" src="img/brilho-vermelho.svg" alt=""><img class="ilu" src="img/limao.svg" alt=""><img class="ilu" src="img/taca.svg" alt=""><img class="ilu" src="img/camarao.svg" alt=""></div>
   <p class="note">Fontes: Tabela TACO (NEPA/Unicamp, 4ª ed.), Open Food Facts (cópia dos produtos vendidos no Brasil, novembro de 2026) e leitura do rótulo pelo Claude. Pela foto do prato, porções, óleo e molhos são estimados: ajuste os gramas se souber o peso. Não substitui orientação de nutricionista.</p>
 </div>
 
@@ -902,7 +915,7 @@ Responda SOMENTE com JSON:
     $("barG").style.width = Math.min(100,t.g/ref.g*100)+"%"; $("gG").textContent = fmt(t.g)+" g";
 
     const list = $("mealList"); list.innerHTML = "";
-    if (!dm.length) list.innerHTML = `<div class="empty">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div>`;
+    if (!dm.length) list.innerHTML = `<div class="empty"><img class="ilu" src="img/torrada.svg" alt="">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div>`;
     else { const wrap = document.createElement("div"); wrap.className="log"; list.append(wrap);
       dm.forEach(m => {
         const el = document.createElement("article"); el.className = "meal";
@@ -971,7 +984,7 @@ Responda SOMENTE com JSON:
 
   function renderRecipes(){
     const box = $("recItems"); box.innerHTML = "";
-    if (!recipes.length) { box.innerHTML = `<div class="empty">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div>`; return; }
+    if (!recipes.length) { box.innerHTML = `<div class="empty"><img class="ilu" src="img/azeitonas.svg" alt="" style="width:56px">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div>`; return; }
     [...recipes].sort((a,b)=>String(a.nome||"").localeCompare(String(b.nome||""),"pt")).forEach(r => {
       const el = document.createElement("article"); el.className = "rcard";
       const porc = +r.porcoes || 1;

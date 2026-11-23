@@ -46,6 +46,7 @@ e abra <http://localhost:8000>. Abrir o arquivo direto (`file://`) não funciona
 ```
 index.html                    o app inteiro (HTML, CSS e JavaScript)
 config.js                     endereço e chave pública do Supabase (apague para usar o modo local)
+img/*.svg                     ilustrações originais em estilo giz pastel oleoso (SVG com filtro de textura)
 data/taco.json                Tabela TACO: 597 linhas
                               [id, nome, categoria, kcal, proteína, carbo, gordura, fibra, sódio_mg] por 100 g
 data/off/00.json … 99.json    Open Food Facts (≈29,5 mil produtos vendidos no Brasil),
