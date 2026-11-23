@@ -1,0 +1,1026 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style></head><body>
+<title>Diário do Prato</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: single mobile-first column — today's ring summary, add-food card (plate photo / barcode / TACO search) feeding one meal draft, meal log, 7-day strip */
+:root{
+  --bg:#f3f5ef; --surface:#ffffff; --ink:#1d2a22; --muted:#5f6d63; --line:#dde3d8;
+  --accent:#2f6b4a; --accent-ink:#ffffff; --citrus:#e0a526; --soft:#e6eee3; --warn:#b4532e;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121814; --surface:#1a221d; --ink:#e7eee8; --muted:#9aa89e; --line:#2b362f;
+  --accent:#6fbf8f; --accent-ink:#0f1a13; --citrus:#f0bd4a; --soft:#223028; --warn:#e78a63; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121814; --surface:#1a221d; --ink:#e7eee8; --muted:#9aa89e; --line:#2b362f;
+  --accent:#6fbf8f; --accent-ink:#0f1a13; --citrus:#f0bd4a; --soft:#223028; --warn:#e78a63; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:560px;margin:0 auto;padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:1.7rem}
+h2{font-size:1.15rem}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.82rem}
+.label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+button,select,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,label.btn:focus-within{outline:2px solid var(--citrus);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:12px;padding:12px 18px;font-weight:600;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.sm{padding:7px 12px;font-size:.85rem;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:default}
+.iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;width:36px;height:36px;display:grid;place-items:center}
+
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.daynav{display:flex;align-items:center;gap:8px}
+.daynav .d{min-width:110px;text-align:center;font-weight:600}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px}
+.summary{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.ring{position:relative;width:132px;height:132px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .center{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .big{font-family:var(--display);font-size:1.7rem;font-weight:700;line-height:1}
+.macros{display:flex;flex-direction:column;gap:10px;min-width:0}
+.macro{display:grid;grid-template-columns:70px 1fr auto;gap:8px;align-items:center;font-size:.85rem}
+.bar{height:6px;border-radius:3px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.goal{display:flex;align-items:center;gap:6px;font-size:.82rem;color:var(--muted)}
+.goal input{width:78px;padding:4px 6px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+@media (max-width:420px){.summary{grid-template-columns:1fr;justify-items:center}.macros{width:100%}}
+
+.capture{display:flex;flex-direction:column;gap:14px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--soft);padding:4px;border-radius:12px}
+.tabs button{border:0;background:transparent;border-radius:9px;padding:8px 4px;font-weight:600;font-size:.84rem;color:var(--muted);line-height:1.2}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .08)}
+.panel{display:flex;flex-direction:column;gap:12px}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.drop.has{padding:0;border-style:solid;overflow:hidden}
+.drop img{width:100%;max-height:300px;object-fit:cover;display:block}
+.plate-ico{width:52px;height:52px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px;min-width:0}
+.field{display:flex;flex-direction:column;gap:4px}
+.field textarea,.inp{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);width:100%}
+textarea{resize:vertical;min-height:44px}
+.status{font-size:.88rem;color:var(--muted)}
+.status.err{color:var(--warn)}
+.status:empty{display:none}
+.inline{display:flex;gap:8px}
+.inline>input{flex:1;min-width:0}
+.hint{margin:0}
+
+.product{border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.product .pn{font-weight:600;overflow-wrap:anywhere}
+.phead{display:flex;justify-content:space-between;gap:8px;align-items:start}
+.phead>div{min-width:0;flex:1}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.facts div{background:var(--surface);border-radius:10px;padding:6px 2px}
+.facts b{display:block;font-family:var(--display);font-size:1.05rem}
+.facts span{font-size:.7rem;color:var(--muted)}
+.qty{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.qty input{width:90px}
+
+.results{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.results button{display:grid;grid-template-columns:1fr auto;gap:8px;text-align:left;border:0;border-top:1px solid var(--line);background:var(--surface);padding:10px 12px}
+.results button:first-child{border-top:0}
+.results button:hover{background:var(--soft)}
+.results .c{font-size:.74rem;color:var(--muted)}
+
+.draft{display:flex;flex-direction:column;gap:10px;border-top:1px solid var(--line);padding-top:14px}
+.dhead{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.dhead input{flex:1;min-width:0;font-weight:600;padding:6px 10px}
+.items{width:100%;border-collapse:collapse;font-size:.88rem}
+.items th{text-align:left;font-weight:600;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;padding:4px}
+.items th.r{text-align:right}
+.items td{padding:4px;border-top:1px solid var(--line);vertical-align:middle}
+.items td.w1{width:72px}.items td.w2{width:80px}.items td.w3{width:28px}
+.items input{width:100%;padding:6px;border:1px solid transparent;border-radius:6px;background:transparent}
+.items input:hover,.items input:focus{border-color:var(--line);background:var(--bg)}
+.items td.n input{text-align:right;font-variant-numeric:tabular-nums}
+.items .x{border:0;background:none;color:var(--muted);font-size:1.1rem}
+.src{display:block;font-size:.66rem;color:var(--muted);padding-left:7px}
+.tablewrap{overflow-x:auto}
+.total{display:flex;justify-content:space-between;align-items:baseline;font-weight:600}
+.total .k{font-family:var(--display);font-size:1.4rem}
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:.72rem;font-weight:600;background:var(--soft);color:var(--accent);white-space:nowrap}
+.pill.baixa{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.media{background:color-mix(in srgb,var(--citrus) 22%,transparent);color:var(--ink)}
+
+.log{display:flex;flex-direction:column;gap:10px}
+.meal{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
+.meal img,.meal .ph{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--soft)}
+.meal .ph{display:grid;place-items:center;color:var(--accent);font-family:var(--display);font-weight:700;font-size:1.4rem}
+.meal .t{font-weight:600;overflow-wrap:anywhere}
+.meal .k{font-family:var(--display);font-weight:700;font-size:1.15rem;text-align:right}
+.meal details{grid-column:1/-1;font-size:.84rem;color:var(--muted)}
+.meal details ul{margin:6px 0 0;padding-left:18px}
+.empty{border:1px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--muted)}
+
+.week{display:flex;flex-direction:column;gap:10px}
+.week svg{width:100%;height:auto;display:block}
+.note{font-size:.78rem;color:var(--muted)}
+.view{display:flex;flex-direction:column;gap:20px}
+.viewnav{grid-template-columns:1fr 1fr}
+.rsec{display:flex;flex-direction:column;gap:14px}
+.rlist{display:flex;flex-direction:column;gap:10px}
+.rcard{display:grid;grid-template-columns:72px 1fr;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;padding:10px;background:var(--bg)}
+.rcard img,.rcard .ph{width:72px;height:72px;border-radius:10px;object-fit:cover;background:var(--soft)}
+.rcard .ph{display:grid;place-items:center;color:var(--accent);font-family:var(--display);font-weight:700;font-size:1.5rem}
+.rcard .t{font-weight:600;overflow-wrap:anywhere}
+.ract{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ract .rq{width:70px;padding:6px 8px}
+.ing{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px 0;border-top:1px solid var(--line)}
+.ing .nm{padding:6px 8px;font-weight:500}
+.ing .x{border:0;background:none;color:var(--muted);font-size:1.2rem;padding:0 4px}
+.ing .meas{grid-column:1/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ing .meas input{padding:6px 8px}
+.ing .q{width:60px}.ing .u{flex:1 1 110px;min-width:0;width:auto}.ing .gr{width:80px}
+.ing .kc{margin-left:auto;font-weight:600}
+.ing .src{grid-column:1/-1;padding-left:2px}
+.rtot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rtot>div{background:var(--soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
+.rtot b{font-family:var(--display);font-size:1.35rem}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Diário do Prato</h1>
+    <div class="daynav" id="daynav">
+      <button class="iconbtn" id="prevDay" aria-label="Dia anterior">‹</button>
+      <span class="d" id="dayLabel">Hoje</span>
+      <button class="iconbtn" id="nextDay" aria-label="Próximo dia">›</button>
+    </div>
+  </header>
+
+  <nav class="tabs viewnav" role="tablist" aria-label="Seções">
+    <button role="tab" id="nav-diario" aria-selected="true" aria-controls="v-diario">Diário</button>
+    <button role="tab" id="nav-receitas" aria-selected="false" aria-controls="v-receitas">Receitas</button>
+  </nav>
+
+  <div class="view" id="v-diario" role="tabpanel">
+
+  <section class="card summary" aria-label="Resumo do dia">
+    <div class="ring">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="var(--soft)" stroke-width="12"/>
+        <circle id="ringArc" cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 999" style="opacity:0"/>
+      </svg>
+      <div class="center"><div><div class="big num" id="kcalDay">0</div><div class="small muted">kcal</div></div></div>
+    </div>
+    <div class="macros">
+      <div class="label" id="remaining">—</div>
+      <div class="macro"><span>Proteína</span><div class="bar"><i id="barP" style="width:0"></i></div><span class="num" id="gP">0 g</span></div>
+      <div class="macro"><span>Carbo</span><div class="bar"><i id="barC" style="width:0;background:var(--citrus)"></i></div><span class="num" id="gC">0 g</span></div>
+      <div class="macro"><span>Gordura</span><div class="bar"><i id="barG" style="width:0;background:var(--warn)"></i></div><span class="num" id="gG">0 g</span></div>
+      <label class="goal" for="goalInput">Meta diária <input type="number" id="goalInput" min="800" max="6000" step="50" value="2000" class="num"> kcal</label>
+    </div>
+  </section>
+
+  <section class="card capture" aria-labelledby="capH">
+    <div class="dhead">
+      <h2 id="capH">Nova refeição</h2>
+      <select id="mealType" class="inp" style="width:auto;padding:6px 10px" aria-label="Tipo de refeição"><option>Café da manhã</option><option>Almoço</option><option>Lanche</option><option>Jantar</option><option>Ceia</option></select>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-prato" aria-selected="true" aria-controls="p-prato">Foto do prato</button>
+      <button role="tab" id="tab-barras" aria-selected="false" aria-controls="p-barras">Código de barras</button>
+      <button role="tab" id="tab-taco" aria-selected="false" aria-controls="p-taco">Buscar alimento</button>
+    </div>
+
+    <div class="panel" id="p-prato" role="tabpanel">
+      <div class="drop" id="drop">
+        <svg class="plate-ico" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" stroke-width="3"/><circle cx="32" cy="32" r="16" fill="none" stroke="var(--accent)" stroke-width="2" opacity=".5"/><path d="M6 10v14M10 10v14M8 24v30" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M56 10c-4 0-5 6-5 12s2 6 5 6v26" stroke="var(--muted)" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+        <div>Tire uma foto do prato de cima, com o prato inteiro visível.</div>
+        <div class="row" style="width:100%;justify-content:center"><label class="btn" for="cam">Tirar foto</label><label class="btn ghost" for="photo">Escolher da galeria</label></div>
+      </div>
+      <div class="field"><label class="label" for="hint">Detalhes (opcional)</label>
+        <textarea id="hint" rows="1" placeholder="ex.: arroz integral, frango grelhado no azeite"></textarea></div>
+      <button class="btn" id="analyze" disabled>Calcular calorias</button>
+    </div>
+
+    <div class="panel" id="p-barras" role="tabpanel" hidden>
+      <p class="small muted hint">Fotografe o código de barras do produto. Procuro primeiro nos seus produtos salvos e depois no Open Food Facts.</p>
+      <div class="row"><label class="btn" for="bcCam">Fotografar código</label><label class="btn ghost" for="bcGal">Da galeria</label></div>
+      <form class="inline" id="bcForm"><input class="inp num" id="bcInput" inputmode="numeric" placeholder="ou digite os números" aria-label="Código de barras"><button class="btn ghost sm" type="submit">Buscar</button></form>
+      <div id="labelAsk" class="product" hidden>
+        <div><strong>Produto não encontrado.</strong> <span class="muted small" id="labelCode"></span></div>
+        <div class="small muted">Fotografe a tabela nutricional da embalagem. Eu leio os valores e guardo o produto para as próximas vezes.</div>
+        <div class="row"><label class="btn" for="lblCam">Fotografar tabela</label><label class="btn ghost" for="lblGal">Da galeria</label></div>
+      </div>
+      <div id="prodCard" class="product" hidden></div>
+    </div>
+
+    <div class="panel" id="p-taco" role="tabpanel" hidden>
+      <p class="small muted hint">Alimentos da Tabela TACO (Unicamp): arroz, feijão, frutas, carnes, verduras e outros, com valores por 100 g.</p>
+      <input class="inp" id="tacoQ" placeholder="ex.: feijão carioca cozido" aria-label="Buscar alimento na TACO" autocomplete="off">
+      <div class="results" id="tacoRes" hidden></div>
+      <div id="tacoCard" class="product" hidden></div>
+    </div>
+
+    <input type="file" id="cam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="photo" accept="image/*" hidden>
+    <input type="file" id="bcCam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="bcGal" accept="image/*" hidden>
+    <input type="file" id="lblCam" accept="image/*" capture="environment" hidden>
+    <input type="file" id="lblGal" accept="image/*" hidden>
+
+    <div class="status" id="status" role="status"></div>
+
+    <div class="draft" id="draft" hidden>
+      <div class="dhead">
+        <input class="inp" id="dishName" aria-label="Nome da refeição" placeholder="Nome da refeição">
+        <span class="pill" id="conf" hidden></span>
+      </div>
+      <div class="tablewrap">
+        <table class="items">
+          <thead><tr><th>Alimento</th><th class="r">g</th><th class="r">kcal</th><th></th></tr></thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+      <div class="small muted">Para juntar mais itens nesta refeição, use as abas acima.</div>
+      <div class="total"><span>Total</span><span><span class="k num" id="totalK">0</span> kcal</span></div>
+      <div class="small muted num" id="totalM"></div>
+      <div class="small muted" id="obs"></div>
+      <div class="row">
+        <button class="btn ghost" id="discard">Descartar</button>
+        <button class="btn" id="save">Salvar no diário</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="log" aria-labelledby="logH">
+    <h2 id="logH">Refeições do dia</h2>
+    <div id="mealList"><div class="empty">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div></div>
+  </section>
+
+  <section class="card week" aria-labelledby="weekH">
+    <h2 id="weekH">Últimos 7 dias</h2>
+    <div id="weekChart"></div>
+  </section>
+
+  </div>
+
+  <div class="view" id="v-receitas" role="tabpanel" hidden>
+    <section class="card rsec" id="recList" aria-labelledby="recH">
+      <div class="dhead"><h2 id="recH">Minhas receitas</h2><button class="btn sm" id="recNew" type="button">Nova receita</button></div>
+      <div class="status" id="rListStatus" role="status"></div>
+      <div class="rlist" id="recItems"><div class="empty">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div></div>
+    </section>
+
+    <section class="card rsec" id="recEd" aria-labelledby="recEdH" hidden>
+      <div class="dhead"><h2 id="recEdH">Receita</h2><button class="btn ghost sm" id="rBack" type="button">Voltar</button></div>
+      <div class="field"><label class="label" for="rNome">Nome</label><input class="inp" id="rNome" placeholder="ex.: Bolo de cenoura da vó"></div>
+      <div class="drop" id="rPhoto"><div class="small muted">Foto da receita pronta (opcional)</div><div class="row" style="width:100%;justify-content:center"><label class="btn ghost sm" for="rCam">Tirar foto</label><label class="btn ghost sm" for="rGal">Da galeria</label></div></div>
+      <div class="row">
+        <div class="field"><label class="label" for="rPorc">Rende (porções)</label><input class="inp num" id="rPorc" type="number" min="1" step="1" value="4"></div>
+        <div class="field"><label class="label" for="rPeso">Peso pronto em g (opcional)</label><input class="inp num" id="rPeso" type="number" min="0" step="any" placeholder="ex.: 900"></div>
+      </div>
+      <div class="field"><label class="label" for="rTxt">Ingredientes e medidas</label>
+        <textarea id="rTxt" rows="4" placeholder="Cole ou escreva a receita, um ingrediente por linha:&#10;3 cenouras médias&#10;2 xícaras de farinha de trigo&#10;1 xícara de óleo"></textarea></div>
+      <button class="btn" id="rParse" type="button">Calcular ingredientes</button>
+      <div class="row"><label class="btn ghost sm" for="rTxtCam">Fotografar receita escrita</label><label class="btn ghost sm" for="rTxtGal">Receita da galeria</label></div>
+      <div class="status" id="rStatus" role="status"></div>
+      <div id="rIngs"></div>
+      <div class="field"><label class="label" for="rAddQ">Adicionar ingrediente da TACO</label><input class="inp" id="rAddQ" placeholder="ex.: ovo de galinha" autocomplete="off"></div>
+      <div class="results" id="rAddRes" hidden></div>
+      <div class="rtot">
+        <div><span class="label">Receita inteira</span><b class="num"><span id="rTot">0</span> kcal</b></div>
+        <div><span class="label">Por porção</span><b class="num"><span id="rPer">0</span> kcal</b></div>
+      </div>
+      <div class="small muted num" id="rPerM"></div>
+      <div class="small muted num" id="r100"></div>
+      <div class="field"><label class="label" for="rPrep">Modo de preparo (opcional)</label><textarea id="rPrep" rows="3"></textarea></div>
+      <div class="row"><button class="btn ghost" id="rDel" type="button" hidden>Excluir receita</button><button class="btn" id="rSave" type="button">Salvar receita</button></div>
+      <input type="file" id="rCam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="rGal" accept="image/*" hidden>
+      <input type="file" id="rTxtCam" accept="image/*" capture="environment" hidden>
+      <input type="file" id="rTxtGal" accept="image/*" hidden>
+    </section>
+  </div>
+
+  <p class="note">Fontes: Tabela TACO (NEPA/Unicamp, 4ª ed.), Open Food Facts (cópia dos produtos vendidos no Brasil, novembro de 2026) e leitura do rótulo pelo Claude. Pela foto do prato, porções, óleo e molhos são estimados: ajuste os gramas se souber o peso. Não substitui orientação de nutricionista.</p>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const MONTHS = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const WD = ["dom","seg","ter","qua","qui","sex","sáb"];
+  const dayKey = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const fmt = n => Math.round(n||0).toLocaleString("pt-BR");
+  const fmt1 = n => (Math.round((n||0)*10)/10).toLocaleString("pt-BR");
+  const norm = s => String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+
+  let viewDate = new Date();
+  let meals = [], goal = 2000;
+  let draft = null;
+  let thumbUrl = null, plateBlob = null;
+  let store = null, sample = null;
+
+  function say(t, err){ const s=$("status"); s.textContent = t||""; s.classList.toggle("err", !!err); }
+
+  // ---------- tabs ----------
+  const TABS = ["prato","barras","taco"];
+  TABS.forEach(t => $("tab-"+t).addEventListener("click", () => {
+    TABS.forEach(o => { $("tab-"+o).setAttribute("aria-selected", o===t); $("p-"+o).hidden = o!==t; });
+    say("");
+    if (t==="taco") { loadTaco(); $("tacoQ").focus(); }
+  }));
+
+  // ---------- storage ----------
+  const LS = "diario-prato-v1";
+  function lsRead(){ try { const o = JSON.parse(localStorage.getItem(LS)) || {}; return {meals:o.meals||[], goal:o.goal||2000, produtos:o.produtos||{}, receitas:o.receitas||[]}; } catch { return {meals:[],goal:2000,produtos:{},receitas:[]}; } }
+  function lsWrite(o){ try { localStorage.setItem(LS, JSON.stringify(o)); } catch {} }
+  function localStore(){
+    const o = lsRead(); meals = o.meals; goal = o.goal; render();
+    recipes = o.receitas; renderRecipes();
+    const persist = () => lsWrite({meals, goal, produtos:o.produtos, receitas:o.receitas});
+    return {
+      async save(m){ m.id = "m"+Date.now(); meals.push(m); persist(); render(); },
+      async remove(id){ meals = meals.filter(m=>m.id!==id); persist(); render(); },
+      async saveGoal(g){ goal = g; persist(); render(); },
+      async getProduct(code){ return o.produtos[code] || null; },
+      async saveProduct(p){ o.produtos[p.code] = p; persist(); },
+      async saveRecipe(id, d){
+        if (id) o.receitas = o.receitas.map(r => r.id===id ? {...d, id} : r);
+        else o.receitas.push({...d, id:"r"+Date.now()});
+        recipes = o.receitas; persist(); renderRecipes();
+      },
+      async removeRecipe(id){ o.receitas = o.receitas.filter(r => r.id!==id); recipes = o.receitas; persist(); renderRecipes(); }
+    };
+  }
+  async function initStore(){
+    let db = null, user = null;
+    try { [db, user] = await Promise.all([claude.use("db"), claude.use("user")]); } catch {}
+    if (!db || !user) { store = localStore(); say("Modo local: seus registros ficam só neste navegador."); return; }
+    const uid = await user.id();
+    const base = "data/users/" + uid;
+    const col = db.collection(base + "/meals");
+    const prods = db.collection(base + "/produtos");
+    const goalDoc = db.doc(base + "/settings/goal");
+    let loaded = false;
+    const timer = setTimeout(()=>{ if(!loaded) say("O diário está demorando para carregar."); }, 10000);
+    col.orderBy("ts","desc").limit(400).onSnapshot(snap => {
+      loaded = true; clearTimeout(timer);
+      meals = snap.docs.map(d => ({id:d.id, ...d.data()}));
+      render();
+    }, e => { clearTimeout(timer); say("Não consegui carregar o diário ("+(e.code||"erro")+").", true); });
+    goalDoc.onSnapshot(s => { if (s.exists) { goal = Number(s.data().kcal) || 2000; render(); } }, ()=>{});
+    const recCol = db.collection(base + "/receitas");
+    recCol.onSnapshot(snap => { recipes = snap.docs.map(d => ({id:d.id, ...d.data()})); renderRecipes(); },
+      e => { $("rListStatus").textContent = "Não consegui carregar as receitas (" + (e.code||"erro") + ")."; });
+    store = {
+      async save(m){ await col.add(m); },
+      async remove(id){ await col.doc(id).delete(); },
+      async saveGoal(g){ goal = g; render(); await goalDoc.set({kcal:g}); },
+      async getProduct(code){ const s = await prods.doc(code).get(); return s.exists ? s.data() : null; },
+      async saveProduct(p){ await prods.doc(p.code).set(p); },
+      async saveRecipe(id, d){ if (id) await recCol.doc(id).set(d); else await recCol.add(d); },
+      async removeRecipe(id){ await recCol.doc(id).delete(); }
+    };
+  }
+  async function initSample(){
+    let caps = null;
+    try { sample = await claude.use("sample"); } catch {}
+    if (sample) caps = await sample.limits().catch(()=>null);
+    if (!sample || !caps?.images) {
+      sample = null;
+      say("A leitura de fotos pelo Claude não está disponível nesta visualização. A busca na TACO e por código digitado continuam funcionando.");
+    }
+    $("analyze").disabled = !(sample && plateBlob);
+  }
+  function claudeErr(e, what){
+    if (e?.code === "cancelled") return;
+    say(e?.code === "not_granted" ? "Você não permitiu o uso do Claude nesta página." :
+        e?.code === "rate_limited" ? "Muitas análises seguidas. Espere um minuto e tente de novo." :
+        "Não consegui " + what + ". Tente de novo com uma foto mais nítida.", true);
+  }
+
+  // ---------- data: TACO + Open Food Facts ----------
+  let taco = null, tacoP = null;
+  function loadTaco(){
+    if (!tacoP) tacoP = fetch("data/taco.json").then(r => { if(!r.ok) throw 0; return r.json(); })
+      .then(rows => taco = rows.map(r => ({id:r[0], nome:r[1], cat:r[2], kcal:r[3], p:r[4], c:r[5], g:r[6], key:norm(r[1])})))
+      .catch(() => { tacoP = null; say("Não consegui carregar a tabela TACO.", true); return null; });
+    return tacoP;
+  }
+  function searchTaco(q, n=12){
+    if (!taco) return [];
+    const words = norm(q).split(/[^a-z0-9]+/).filter(w => w.length>1);
+    if (!words.length) return [];
+    return taco.map(t => {
+      let s = 0;
+      for (const w of words) { const i = t.key.indexOf(w); if (i<0) return null; s += i===0 ? 3 : (t.key[i-1]===" "||t.key[i-1]===",") ? 2 : 1; }
+      return {t, s: s - t.key.length/200};
+    }).filter(Boolean).sort((a,b)=>b.s-a.s).slice(0,n).map(x=>x.t);
+  }
+  const offShards = {};
+  function offShard(k){ return offShards[k] ||= fetch("data/off/"+k+".json").then(r => r.ok ? r.json() : {}).catch(()=>{ delete offShards[k]; return {}; }); }
+  function codeVariants(code){
+    const v = new Set([code]);
+    if (code.length===12) v.add("0"+code);
+    if (code.length===13 && code[0]==="0") v.add(code.slice(1));
+    return [...v];
+  }
+  async function lookupOff(code){
+    for (const c of codeVariants(code)) {
+      const r = (await offShard(c.slice(-2)))[c];
+      if (r) return {code, nome:r[0], marca:r[1], per100:{kcal:r[2], p:r[3]??0, c:r[4]??0, g:r[5]??0}, porcao_g:r[6]||null, porcao_desc:r[7]||"", fonte:"Open Food Facts"};
+    }
+    return null;
+  }
+
+  // ---------- images ----------
+  function loadImg(file){ return new Promise((res,rej)=>{ const u=URL.createObjectURL(file); const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=u; }); }
+  function resize(img, max, q=0.85){
+    const s = Math.min(1, max/Math.max(img.naturalWidth,img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth*s); c.height = Math.round(img.naturalHeight*s);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    return { blob: new Promise(r=>c.toBlob(r,"image/jpeg",q)), url: c.toDataURL("image/jpeg",q) };
+  }
+  function squareThumb(img, size){
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    const m = Math.min(img.naturalWidth,img.naturalHeight);
+    c.getContext("2d").drawImage(img,(img.naturalWidth-m)/2,(img.naturalHeight-m)/2,m,m,0,0,size,size);
+    return c.toDataURL("image/jpeg",0.7);
+  }
+  const isImg = f => f && /^image\//.test(f.type || "image/");
+
+  // ---------- draft (the meal being built) ----------
+  function ensureDraft(){ if (!draft) draft = {nome:"", confianca:null, observacao:"", items:[]}; }
+  function recalc(it){ const f = (it.gramas||0)/100; it.kcal = it.per100.kcal*f; it.p = it.per100.p*f; it.c = it.per100.c*f; it.g = it.per100.g*f; }
+  function mkItem(nome, gramas, per100, fonte, est){
+    const it = {nome, gramas, per100, fonte, kcal:0, p:0, c:0, g:0};
+    if (per100) recalc(it); else Object.assign(it, est);
+    return it;
+  }
+  function addItems(items, nome){
+    ensureDraft(); draft.items.push(...items);
+    if (!draft.nome && nome) draft.nome = nome;
+    showDraft();
+  }
+  function showDraft(){
+    if (!draft) { $("draft").hidden = true; return; }
+    $("draft").hidden = false;
+    $("dishName").value = draft.nome || "";
+    const c = $("conf");
+    c.hidden = !draft.confianca;
+    if (draft.confianca) { c.className = "pill " + draft.confianca; c.textContent = "foto: confiança " + (draft.confianca==="media"?"média":draft.confianca); }
+    $("obs").textContent = draft.observacao || "";
+    const tb = $("itemsBody"); tb.innerHTML = "";
+    draft.items.forEach((it, idx) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td><input id="in-${idx}" aria-label="Alimento"><span class="src"></span></td><td class="n w1"><input id="ig-${idx}" type="number" min="0" inputmode="decimal" aria-label="Gramas"></td><td class="n w2"><input id="ik-${idx}" type="number" min="0" inputmode="decimal" aria-label="Calorias"></td><td class="w3"><button class="x" aria-label="Remover item">×</button></td>`;
+      const [n,g,k] = tr.querySelectorAll("input");
+      n.value = it.nome; g.value = Math.round(it.gramas); k.value = Math.round(it.kcal);
+      tr.querySelector(".src").textContent = it.fonte;
+      n.oninput = () => it.nome = n.value;
+      g.oninput = () => {
+        const ng = +g.value || 0;
+        if (it.per100) { it.gramas = ng; recalc(it); }
+        else if (it.gramas) { const r = ng/it.gramas; it.kcal*=r; it.p*=r; it.c*=r; it.g*=r; it.gramas = ng; }
+        else it.gramas = ng;
+        k.value = Math.round(it.kcal); totals();
+      };
+      k.oninput = () => { it.kcal = +k.value || 0; it.per100 = null; totals(); };
+      tr.querySelector(".x").onclick = () => { draft.items.splice(idx,1); if (!draft.items.length && !thumbUrl) draft = null; showDraft(); };
+      tb.append(tr);
+    });
+    totals();
+  }
+  $("dishName").addEventListener("input", e => { if (draft) draft.nome = e.target.value; });
+  function sumItems(items){ return items.reduce((a,i)=>({kcal:a.kcal+i.kcal,p:a.p+i.p,c:a.c+i.c,g:a.g+i.g}),{kcal:0,p:0,c:0,g:0}); }
+  function totals(){
+    if (!draft) return;
+    const t = sumItems(draft.items);
+    $("totalK").textContent = fmt(t.kcal);
+    $("totalM").textContent = `Proteína ${fmt(t.p)} g · Carbo ${fmt(t.c)} g · Gordura ${fmt(t.g)} g`;
+  }
+
+  // ---------- 1. plate photo ----------
+  const PLATE_EMPTY = $("drop").innerHTML;
+  async function takePlate(f){
+    if (!isImg(f)) return;
+    try {
+      const img = await loadImg(f);
+      const r = resize(img, 1280);
+      plateBlob = await r.blob; thumbUrl = squareThumb(img, 160);
+      const drop = $("drop"); drop.classList.add("has"); drop.innerHTML = "";
+      const pv = new Image(); pv.src = r.url; pv.alt = "Foto do prato"; drop.append(pv);
+      const again = document.createElement("label"); again.className="btn ghost sm"; again.htmlFor="photo"; again.textContent="Trocar foto"; again.style.margin="10px";
+      drop.append(again);
+      $("analyze").disabled = !sample;
+      if (sample) say("");
+    } catch { say("Não consegui abrir essa imagem. Tente outra foto (JPG ou PNG).", true); }
+  }
+  ["cam","photo"].forEach(id => $(id).addEventListener("change", e => { takePlate(e.target.files[0]); e.target.value = ""; }));
+  $("drop").addEventListener("dragover", e => e.preventDefault());
+  $("drop").addEventListener("drop", e => { e.preventDefault(); takePlate(e.dataTransfer.files[0]); });
+  document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files||[])].find(isImg); if (f && !$("p-prato").hidden) takePlate(f); });
+
+  let ctrl = null;
+  $("analyze").addEventListener("click", async () => {
+    if (!plateBlob || !sample) return;
+    ctrl?.abort(); ctrl = new AbortController();
+    $("analyze").disabled = true; say("Analisando o prato…");
+    await loadTaco();
+    const tacoList = (taco||[]).map(t => t.id + "|" + t.nome).join("\n");
+    const hint = $("hint").value.trim();
+    const prompt = `Você é um nutricionista brasileiro. A imagem anexada é a foto de um prato (refeição: ${$("mealType").value}).
+${hint ? "Informação extra do usuário: " + hint + "\n" : ""}Identifique cada alimento visível e estime a porção em gramas pelo tamanho no prato (prato raso padrão ~26 cm). Inclua óleo de preparo e molhos prováveis quando fizer sentido.
+Para cada alimento, escolha na lista da Tabela TACO abaixo o item que melhor corresponde (mesmo alimento e mesmo preparo: cru, cozido, frito, grelhado) e informe o id em "taco_id". Se nenhum corresponder bem, use null e estime kcal e macros você mesmo.
+Se a imagem não mostrar comida, devolva itens vazio e explique em observacao.
+Responda SOMENTE com JSON:
+{"prato":"nome curto do prato","itens":[{"nome":"string","gramas":number,"taco_id":number|null,"kcal":number,"proteina":number,"carbo":number,"gordura":number}],"confianca":"alta"|"media"|"baixa","observacao":"uma frase sobre o que pode mudar a estimativa"}
+
+TABELA TACO (id|alimento):
+${tacoList}`;
+    try {
+      const out = await sample.json(prompt, { images:[plateBlob], signal: ctrl.signal, modelTier:"default" });
+      const byId = new Map((taco||[]).map(t => [t.id, t]));
+      const itens = (Array.isArray(out?.itens) ? out.itens : []).map(i => {
+        const t = byId.get(Number(i.taco_id)); const gr = +i.gramas || 0;
+        return t ? mkItem(String(i.nome||t.nome), gr, {kcal:t.kcal,p:t.p,c:t.c,g:t.g}, "TACO: " + t.nome)
+                 : mkItem(String(i.nome||"Item"), gr, null, "Estimativa do Claude", {kcal:+i.kcal||0, p:+i.proteina||0, c:+i.carbo||0, g:+i.gordura||0});
+      });
+      ensureDraft();
+      draft.confianca = ["alta","media","baixa"].includes(out?.confianca) ? out.confianca : "media";
+      draft.observacao = String(out?.observacao || "");
+      addItems(itens, String(out?.prato || "Refeição"));
+      say(itens.length ? "Confira e ajuste os gramas se quiser. As calorias se recalculam." : "");
+    } catch (e) { claudeErr(e, "analisar a foto"); }
+    finally { $("analyze").disabled = !plateBlob; }
+  });
+
+  // ---------- 2. barcode ----------
+  let zxP = null;
+  function loadZxing(){
+    return zxP ||= new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+      s.onload = () => window.ZXing ? res(window.ZXing) : rej(); s.onerror = () => { zxP = null; rej(); };
+      document.head.append(s);
+    });
+  }
+  async function decodeBarcode(file){
+    const img = await loadImg(file);
+    if ("BarcodeDetector" in window) {
+      try { const d = new BarcodeDetector({formats:["ean_13","ean_8","upc_a","upc_e"]}); const r = await d.detect(img); if (r[0]?.rawValue) return r[0].rawValue; } catch {}
+    }
+    try {
+      const Z = await loadZxing();
+      const hints = new Map(); hints.set(Z.DecodeHintType.TRY_HARDER, true);
+      hints.set(Z.DecodeHintType.POSSIBLE_FORMATS, [Z.BarcodeFormat.EAN_13, Z.BarcodeFormat.EAN_8, Z.BarcodeFormat.UPC_A, Z.BarcodeFormat.UPC_E]);
+      const reader = new Z.BrowserMultiFormatReader(hints);
+      for (const max of [1600, 1000, 700]) {
+        const el = new Image(); el.src = resize(img, max, 0.92).url; await el.decode();
+        try { const res = await reader.decodeFromImageElement(el); if (res?.getText()) return res.getText(); } catch {}
+      }
+    } catch {}
+    if (sample) {
+      const b = await resize(img, 1280).blob;
+      const out = await sample.json(`A imagem mostra um código de barras de produto. Leia os números impressos embaixo das barras. Responda SOMENTE com JSON {"codigo":"apenas dígitos, ou vazio se ilegível"}`, {images:[b], modelTier:"quick"});
+      const c = String(out?.codigo||"").replace(/\D/g,"");
+      if (c.length >= 8) return c;
+    }
+    return null;
+  }
+  async function onBarcodeFile(f){
+    if (!isImg(f)) return;
+    $("labelAsk").hidden = true; $("prodCard").hidden = true;
+    say("Lendo o código de barras…");
+    try {
+      const code = await decodeBarcode(f);
+      if (!code) { say("Não consegui ler o código. Tente uma foto mais de perto, com as barras retas e bem iluminadas, ou digite os números.", true); return; }
+      $("bcInput").value = code;
+      await findProduct(code);
+    } catch (e) { claudeErr(e, "ler o código"); }
+  }
+  ["bcCam","bcGal"].forEach(id => $(id).addEventListener("change", e => { onBarcodeFile(e.target.files[0]); e.target.value = ""; }));
+  $("bcForm").addEventListener("submit", e => { e.preventDefault(); const c = $("bcInput").value.replace(/\D/g,""); if (c.length>=8) findProduct(c); else say("O código precisa ter pelo menos 8 números.", true); });
+
+  let pendingCode = null;
+  async function findProduct(code){
+    $("labelAsk").hidden = true; $("prodCard").hidden = true;
+    say("Procurando o produto…");
+    let p = null;
+    try { p = await store?.getProduct(code); } catch {}
+    if (!p) p = await lookupOff(code);
+    if (p) { say(""); showProduct(p, $("prodCard")); return; }
+    pendingCode = code;
+    $("labelCode").textContent = "Código " + code;
+    $("labelAsk").hidden = false;
+    say(sample ? "" : "A leitura do rótulo precisa do Claude, que não está disponível nesta visualização.", !sample);
+  }
+
+  async function onLabelFile(f){
+    if (!isImg(f) || !sample) return;
+    say("Lendo a tabela nutricional…");
+    try {
+      const img = await loadImg(f);
+      const b = await resize(img, 1600, 0.9).blob;
+      const out = await sample.json(`A imagem mostra a tabela de informação nutricional de um produto alimentício brasileiro (e talvez parte da embalagem).
+Leia os valores exatamente como impressos. Se a tabela trouxer a coluna "100 g" (ou 100 ml), use-a. Se só houver valores por porção, converta para 100 g usando o tamanho da porção.
+Responda SOMENTE com JSON:
+{"legivel":true|false,"nome":"nome do produto se visível, senão vazio","marca":"marca se visível, senão vazio","porcao_g":number|null,"porcao_desc":"ex.: 30 g (2 biscoitos)","por100":{"kcal":number,"proteina":number,"carbo":number,"gordura":number,"fibra":number|null,"sodio_mg":number|null}}`, {images:[b], modelTier:"default"});
+      if (!out?.legivel || !out?.por100) { say("Não consegui ler a tabela. Tente uma foto reta, de perto e sem reflexo.", true); return; }
+      const v = out.por100;
+      const p = {code: pendingCode, nome: String(out.nome||"").trim() || "Produto " + pendingCode, marca: String(out.marca||""),
+        per100:{kcal:+v.kcal||0, p:+v.proteina||0, c:+v.carbo||0, g:+v.gordura||0}, porcao_g: +out.porcao_g || null, porcao_desc: String(out.porcao_desc||""), fonte:"Rótulo"};
+      $("labelAsk").hidden = true;
+      say("Confira o nome e os valores. Ao adicionar, o produto fica salvo para a próxima vez.");
+      showProduct(p, $("prodCard"), true);
+    } catch (e) { claudeErr(e, "ler a tabela"); }
+  }
+  ["lblCam","lblGal"].forEach(id => $(id).addEventListener("change", e => { onLabelFile(e.target.files[0]); e.target.value = ""; }));
+
+  // product / food card shared by barcode and TACO
+  function showProduct(p, box, isNew){
+    box.hidden = false;
+    const per = p.per100;
+    box.innerHTML = `
+      <div class="phead"><div>${isNew ? `<input class="inp pname" aria-label="Nome do produto" style="padding:6px 8px;font-weight:600">` : `<div class="pn"></div>`}<div class="small muted pm"></div></div><span class="pill"></span></div>
+      <div class="label">por 100 g</div>
+      <div class="facts num">
+        <div><b>${fmt(per.kcal)}</b><span>kcal</span></div><div><b>${fmt1(per.p)}</b><span>prot. g</span></div>
+        <div><b>${fmt1(per.c)}</b><span>carbo g</span></div><div><b>${fmt1(per.g)}</b><span>gord. g</span></div>
+      </div>
+      <div class="qty"><label class="small" for="${box.id}-g">Quanto você comeu?</label>
+        <input class="inp num" id="${box.id}-g" type="number" min="1" inputmode="decimal"> <span class="small">g</span>
+        ${p.porcao_g ? `<button class="btn ghost sm porc" type="button"></button>` : ""}
+        <span class="small muted kc num"></span></div>
+      <button class="btn add" type="button">Adicionar à refeição</button>`;
+    if (isNew) box.querySelector(".pname").value = p.nome; else box.querySelector(".pn").textContent = p.nome;
+    box.querySelector(".pm").textContent = [p.marca, p.code ? "código " + p.code : p.cat].filter(Boolean).join(" · ");
+    box.querySelector(".pill").textContent = p.fonte === "Rótulo" ? "lido do rótulo" : p.fonte;
+    const gi = box.querySelector("#"+box.id+"-g");
+    gi.value = p.porcao_g || 100;
+    const upd = () => box.querySelector(".kc").textContent = "= " + fmt(per.kcal*(+gi.value||0)/100) + " kcal";
+    gi.oninput = upd; upd();
+    const pb = box.querySelector(".porc");
+    if (pb) { pb.textContent = "1 porção" + (p.porcao_desc ? ` (${p.porcao_desc})` : ` (${fmt(p.porcao_g)} g)`); pb.onclick = () => { gi.value = p.porcao_g; upd(); }; }
+    box.querySelector(".add").onclick = async () => {
+      const gr = +gi.value || 0; if (!gr) { gi.focus(); return; }
+      if (isNew) p.nome = box.querySelector(".pname").value.trim() || p.nome;
+      if (p.code && p.fonte === "Rótulo") { try { await store?.saveProduct({...p, savedAt: Date.now()}); } catch {} }
+      const label = p.fonte === "TACO" ? "TACO" : p.fonte + (p.marca ? " · " + p.marca : "");
+      addItems([mkItem(p.nome, gr, {...per}, label)], p.nome);
+      box.hidden = true; say("Adicionado. Junte mais itens ou salve a refeição.");
+      if (box.id === "tacoCard") { $("tacoQ").value = ""; $("tacoRes").hidden = true; }
+    };
+    gi.focus(); gi.select();
+  }
+
+  // ---------- 3. TACO search ----------
+  let tq = null;
+  $("tacoQ").addEventListener("input", () => { clearTimeout(tq); tq = setTimeout(renderTaco, 120); });
+  async function renderTaco(){
+    await loadTaco();
+    const q = $("tacoQ").value.trim();
+    const box = $("tacoRes"); box.innerHTML = ""; box.hidden = !q;
+    if (!q) return;
+    $("tacoCard").hidden = true;
+    const res = searchTaco(q);
+    if (!res.length) { box.innerHTML = `<div class="small muted" style="padding:10px 12px">Nada encontrado. Tente outra palavra, por exemplo "frango" ou "banana".</div>`; return; }
+    res.forEach(t => {
+      const b = document.createElement("button"); b.type = "button";
+      b.innerHTML = `<span><span class="n"></span><span class="c"></span></span><span class="num small muted"></span>`;
+      b.querySelector(".n").textContent = t.nome; b.querySelector(".c").textContent = " · " + t.cat;
+      b.querySelector(".num").textContent = fmt(t.kcal) + " kcal/100 g";
+      b.onclick = () => { box.hidden = true; showProduct({nome:t.nome, cat:t.cat, per100:{kcal:t.kcal,p:t.p,c:t.c,g:t.g}, fonte:"TACO"}, $("tacoCard")); };
+      box.append(b);
+    });
+  }
+
+  // ---------- save / discard ----------
+  function resetCapture(){
+    draft = null; plateBlob = null; thumbUrl = null; $("hint").value = "";
+    const drop = $("drop"); drop.classList.remove("has"); drop.innerHTML = PLATE_EMPTY;
+    $("analyze").disabled = true; $("prodCard").hidden = true; $("labelAsk").hidden = true; $("tacoCard").hidden = true;
+    showDraft();
+  }
+  $("discard").onclick = () => { resetCapture(); say(""); };
+  $("save").onclick = async () => {
+    if (!draft || !draft.items.length || !store) { say("Adicione pelo menos um item antes de salvar.", true); return; }
+    const t = sumItems(draft.items);
+    const now = new Date();
+    const at = dayKey(viewDate) === dayKey(now) ? now : new Date(viewDate.getFullYear(), viewDate.getMonth(), viewDate.getDate(), 12);
+    const m = {
+      ts: at.getTime(), day: dayKey(at), tipo: $("mealType").value, prato: ($("dishName").value.trim() || draft.items[0].nome || "Refeição").slice(0,80),
+      kcal: Math.round(t.kcal), proteina: Math.round(t.p), carbo: Math.round(t.c), gordura: Math.round(t.g),
+      itens: draft.items.filter(i=>i.nome||i.kcal).map(i=>({nome:i.nome, gramas:Math.round(i.gramas), kcal:Math.round(i.kcal), fonte:i.fonte})),
+      thumb: thumbUrl || ""
+    };
+    $("save").disabled = true;
+    try { await store.save(m); resetCapture(); say("Salvo no diário."); }
+    catch(e){ say("Não consegui salvar ("+(e?.code||"erro")+"). Tente de novo.", true); }
+    finally { $("save").disabled = false; }
+  };
+
+  // ---------- goal + day nav ----------
+  $("goalInput").addEventListener("change", e => { const g = Math.max(800, Math.min(6000, +e.target.value || 2000)); store?.saveGoal(g).catch(()=>{}); });
+  $("prevDay").onclick = () => { viewDate.setDate(viewDate.getDate()-1); render(); };
+  $("nextDay").onclick = () => { if (dayKey(viewDate) < dayKey(new Date())) { viewDate.setDate(viewDate.getDate()+1); render(); } };
+  { const h = new Date().getHours(); $("mealType").value = h<10?"Café da manhã":h<15?"Almoço":h<18?"Lanche":h<22?"Jantar":"Ceia"; }
+
+  // ---------- render ----------
+  function render(){
+    const key = dayKey(viewDate), today = dayKey(new Date());
+    const y = new Date(); y.setDate(y.getDate()-1);
+    $("dayLabel").textContent = key===today ? "Hoje" : key===dayKey(y) ? "Ontem" : `${WD[viewDate.getDay()]}, ${viewDate.getDate()} ${MONTHS[viewDate.getMonth()]}`;
+    $("nextDay").disabled = key >= today;
+    if (document.activeElement !== $("goalInput")) $("goalInput").value = goal;
+
+    const dm = meals.filter(m=>m.day===key).sort((a,b)=>a.ts-b.ts);
+    const t = dm.reduce((a,m)=>({k:a.k+(m.kcal||0),p:a.p+(m.proteina||0),c:a.c+(m.carbo||0),g:a.g+(m.gordura||0)}),{k:0,p:0,c:0,g:0});
+    $("kcalDay").textContent = fmt(t.k);
+    const C = 2*Math.PI*52, frac = Math.min(1, t.k/goal);
+    const arc = $("ringArc"); arc.setAttribute("stroke-dasharray", `${frac*C} ${C}`);
+    arc.setAttribute("stroke", t.k>goal ? "var(--warn)" : "var(--accent)");
+    arc.style.opacity = t.k > 0 ? 1 : 0;
+    $("remaining").textContent = t.k>goal ? `${fmt(t.k-goal)} kcal acima da meta` : `faltam ${fmt(goal-t.k)} de ${fmt(goal)} kcal`;
+    const ref = {p: goal*.2/4, c: goal*.5/4, g: goal*.3/9};
+    $("barP").style.width = Math.min(100,t.p/ref.p*100)+"%"; $("gP").textContent = fmt(t.p)+" g";
+    $("barC").style.width = Math.min(100,t.c/ref.c*100)+"%"; $("gC").textContent = fmt(t.c)+" g";
+    $("barG").style.width = Math.min(100,t.g/ref.g*100)+"%"; $("gG").textContent = fmt(t.g)+" g";
+
+    const list = $("mealList"); list.innerHTML = "";
+    if (!dm.length) list.innerHTML = `<div class="empty">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div>`;
+    else { const wrap = document.createElement("div"); wrap.className="log"; list.append(wrap);
+      dm.forEach(m => {
+        const el = document.createElement("article"); el.className = "meal";
+        const hh = new Date(m.ts);
+        const hasThumb = m.thumb && /^data:image\/jpeg;base64,/.test(m.thumb);
+        el.innerHTML = `${hasThumb ? `<img alt="">` : `<div class="ph"></div>`}<div style="min-width:0"><div class="label"></div><div class="t"></div></div><div class="k num"></div>
+          <details><summary>Itens e macros</summary><div class="num mac"></div><ul></ul><button class="btn ghost sm del" style="margin-top:8px">Excluir refeição</button></details>`;
+        if (hasThumb) el.querySelector("img").src = m.thumb; else el.querySelector(".ph").textContent = ((m.prato||"R").trim()[0]||"R").toUpperCase();
+        el.querySelector(".label").textContent = `${m.tipo||"Refeição"} · ${String(hh.getHours()).padStart(2,"0")}:${String(hh.getMinutes()).padStart(2,"0")}`;
+        el.querySelector(".t").textContent = m.prato || "Refeição";
+        el.querySelector(".k").textContent = fmt(m.kcal) + " kcal";
+        el.querySelector(".mac").textContent = `P ${fmt(m.proteina)} g · C ${fmt(m.carbo)} g · G ${fmt(m.gordura)} g`;
+        const ul = el.querySelector("ul");
+        (m.itens||[]).forEach(i => { const li=document.createElement("li"); li.textContent = `${i.nome} — ${fmt(i.gramas)} g, ${fmt(i.kcal)} kcal` + (i.fonte ? ` (${i.fonte})` : ""); ul.append(li); });
+        const del = el.querySelector(".del");
+        del.onclick = async () => {
+          if (del.dataset.armed) { del.disabled = true; try { await store.remove(m.id); } catch { del.disabled=false; del.textContent="Erro ao excluir"; } }
+          else { del.dataset.armed = "1"; del.textContent = "Toque de novo para confirmar"; }
+        };
+        wrap.append(el);
+      });
+    }
+    renderWeek();
+  }
+  function renderWeek(){
+    const days = [];
+    for (let i=6;i>=0;i--){ const d=new Date(viewDate); d.setDate(d.getDate()-i); days.push(d); }
+    const vals = days.map(d => meals.filter(m=>m.day===dayKey(d)).reduce((a,m)=>a+(m.kcal||0),0));
+    const max = Math.max(goal*1.25, ...vals);
+    const W=340,H=150,top=14,bot=26,bw=30,gap=(W-7*bw)/7;
+    const sy = v => top + (H-top-bot)*(1-v/max);
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calorias por dia nos últimos 7 dias">`;
+    s += `<line x1="0" x2="${W}" y1="${sy(goal)}" y2="${sy(goal)}" stroke="var(--citrus)" stroke-dasharray="4 4" stroke-width="1.5"/>`;
+    s += `<text x="${W-2}" y="${sy(goal)-4}" text-anchor="end" font-size="10" fill="var(--muted)">meta ${fmt(goal)}</text>`;
+    days.forEach((d,i) => {
+      const x = gap/2 + i*(bw+gap), v = vals[i], y = sy(v), sel = i===6;
+      s += `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(0,H-bot-y)}" rx="5" fill="${v>goal?"var(--warn)":"var(--accent)"}" opacity="${sel?1:.55}"/>`;
+      if (v) s += `<text x="${x+bw/2}" y="${y-4}" text-anchor="middle" font-size="9.5" fill="var(--ink)">${fmt(v)}</text>`;
+      s += `<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="10.5" fill="var(--muted)" font-weight="${sel?700:400}">${WD[d.getDay()]}</text>`;
+    });
+    s += `<line x1="0" x2="${W}" y1="${H-bot}" y2="${H-bot}" stroke="var(--line)"/></svg>`;
+    $("weekChart").innerHTML = s;
+  }
+
+  // ---------- recipes ----------
+  let recipes = [];
+  let rec = null, recPhoto = "";
+  const isJpeg = s => typeof s === "string" && /^data:image\/jpeg;base64,/.test(s);
+  const isMass = u => /^(g|gr|grama|gramas|ml|mililitro|mililitros)$/i.test(String(u||"").trim());
+  function rsay(t, err){ const s=$("rStatus"); s.textContent = t||""; s.classList.toggle("err", !!err); }
+
+  function showView(v){
+    ["diario","receitas"].forEach(o => { $("nav-"+o).setAttribute("aria-selected", o===v); $("v-"+o).hidden = o!==v; });
+    $("daynav").hidden = v !== "diario";
+  }
+  $("nav-diario").onclick = () => showView("diario");
+  $("nav-receitas").onclick = () => showView("receitas");
+
+  function recipeBase(r){ return (+r.peso_pronto || 0) || (r.ingredientes||[]).reduce((a,i)=>a+(+i.gramas||0),0); }
+  function recipeToItem(r, n){
+    const porc = +r.porcoes || 1, base = recipeBase(r);
+    const label = n === 1 ? "1 porção" : fmt1(n) + " porções";
+    if (base > 0) return mkItem(r.nome + " (" + label + ")", base/porc*n, {kcal:r.kcal/base*100, p:r.p/base*100, c:r.c/base*100, g:r.g/base*100}, "Receita");
+    const f = n/porc; return mkItem(r.nome + " (" + label + ")", 0, null, "Receita", {kcal:r.kcal*f, p:r.p*f, c:r.c*f, g:r.g*f});
+  }
+
+  function renderRecipes(){
+    const box = $("recItems"); box.innerHTML = "";
+    if (!recipes.length) { box.innerHTML = `<div class="empty">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div>`; return; }
+    [...recipes].sort((a,b)=>String(a.nome||"").localeCompare(String(b.nome||""),"pt")).forEach(r => {
+      const el = document.createElement("article"); el.className = "rcard";
+      const porc = +r.porcoes || 1;
+      el.innerHTML = `${isJpeg(r.foto) ? `<img alt="">` : `<div class="ph"></div>`}<div style="min-width:0"><div class="t"></div><div class="small muted num s"></div></div>
+        <div class="ract"><button class="btn ghost sm open" type="button">Abrir</button>
+        <input class="inp num rq" id="rq-${r.id}" type="number" min="0.25" step="0.25" value="1" aria-label="Porções a adicionar"><span class="small">porção(ões)</span>
+        <button class="btn sm add" type="button">Adicionar à refeição</button></div>`;
+      if (isJpeg(r.foto)) el.querySelector("img").src = r.foto; else el.querySelector(".ph").textContent = ((r.nome||"R").trim()[0]||"R").toUpperCase();
+      el.querySelector(".t").textContent = r.nome || "Receita";
+      el.querySelector(".s").textContent = `${fmt(r.kcal/porc)} kcal por porção · rende ${fmt(porc)} · total ${fmt(r.kcal)} kcal`;
+      el.querySelector(".open").onclick = () => openEditor(r);
+      el.querySelector(".add").onclick = () => {
+        const n = +el.querySelector(".rq").value || 1;
+        addItems([recipeToItem(r, n)], r.nome);
+        showView("diario");
+        say("Receita adicionada à refeição. Ajuste se quiser e salve no diário.");
+        $("draft").scrollIntoView({behavior:"smooth", block:"center"});
+      };
+      box.append(el);
+    });
+  }
+
+  const REC_PH_EMPTY = $("rPhoto").innerHTML;
+  function drawRecPhoto(){
+    const b = $("rPhoto");
+    if (recPhoto) { b.classList.add("has"); b.innerHTML = `<img alt="Foto da receita"><label class="btn ghost sm" for="rGal" style="margin:10px">Trocar foto</label>`; b.querySelector("img").src = recPhoto; }
+    else { b.classList.remove("has"); b.innerHTML = REC_PH_EMPTY; }
+  }
+  ["rCam","rGal"].forEach(id => $(id).addEventListener("change", async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!isImg(f)) return;
+    try { recPhoto = resize(await loadImg(f), 480, 0.75).url; drawRecPhoto(); } catch { rsay("Não consegui abrir essa imagem.", true); }
+  }));
+
+  function openEditor(r){
+    rec = r ? JSON.parse(JSON.stringify(r)) : {id:null, nome:"", foto:"", porcoes:4, peso_pronto:null, ingredientes:[], preparo:""};
+    rec.ingredientes = rec.ingredientes || [];
+    recPhoto = rec.foto || "";
+    $("recList").hidden = true; $("recEd").hidden = false;
+    $("recEdH").textContent = rec.id ? "Editar receita" : "Nova receita";
+    $("rNome").value = rec.nome || ""; $("rPorc").value = rec.porcoes || 4; $("rPeso").value = rec.peso_pronto || "";
+    $("rPrep").value = rec.preparo || ""; $("rTxt").value = ""; $("rAddQ").value = ""; $("rAddRes").hidden = true;
+    const del = $("rDel"); del.hidden = !rec.id; del.dataset.armed = ""; del.textContent = "Excluir receita";
+    rsay(""); drawRecPhoto(); drawIngs();
+    $("recEd").scrollIntoView({block:"start"});
+  }
+  function closeEditor(){ rec = null; $("recEd").hidden = true; $("recList").hidden = false; }
+  $("recNew").onclick = () => openEditor(null);
+  $("rBack").onclick = closeEditor;
+
+  function setGrams(i, ng){
+    if (i.per100) { i.gramas = ng; const f = ng/100; i.kcal = i.per100.kcal*f; i.p = i.per100.p*f; i.c = i.per100.c*f; i.g = i.per100.g*f; }
+    else { if (i.gramas > 0) { const r = ng/i.gramas; i.kcal*=r; i.p*=r; i.c*=r; i.g*=r; } i.gramas = ng; }
+  }
+  function drawIngs(){
+    const box = $("rIngs"); box.innerHTML = "";
+    if (!rec.ingredientes.length) box.innerHTML = `<div class="small muted">Nenhum ingrediente ainda. Escreva a receita acima e toque em "Calcular ingredientes", ou busque na TACO abaixo.</div>`;
+    rec.ingredientes.forEach((i, idx) => {
+      const el = document.createElement("div"); el.className = "ing";
+      el.innerHTML = `<input class="inp nm" id="ri-n-${idx}" aria-label="Ingrediente"><button class="x" type="button" aria-label="Remover ingrediente">×</button>
+        <div class="meas"><input class="inp num q" id="ri-q-${idx}" type="number" min="0" step="any" inputmode="decimal" aria-label="Quantidade">
+        <input class="inp u" id="ri-u-${idx}" aria-label="Medida" placeholder="medida"><span class="small muted">=</span>
+        <input class="inp num gr" id="ri-g-${idx}" type="number" min="0" step="any" inputmode="decimal" aria-label="Gramas"><span class="small muted">g</span>
+        <span class="kc num small"></span></div><span class="src"></span>`;
+      const [nm, q, u, gr] = el.querySelectorAll("input");
+      const kc = el.querySelector(".kc");
+      nm.value = i.nome || ""; q.value = i.qtd ?? ""; u.value = i.unidade || ""; gr.value = Math.round((+i.gramas||0)*10)/10;
+      el.querySelector(".src").textContent = i.fonte || "";
+      const upd = () => { kc.textContent = fmt(i.kcal) + " kcal"; recTotals(); };
+      nm.oninput = () => i.nome = nm.value;
+      u.oninput = () => i.unidade = u.value;
+      q.oninput = () => {
+        const nq = +q.value || 0;
+        if (isMass(i.unidade)) setGrams(i, nq); else if (+i.qtd > 0) setGrams(i, i.gramas*nq/i.qtd);
+        i.qtd = nq; gr.value = Math.round(i.gramas*10)/10; upd();
+      };
+      gr.oninput = () => { setGrams(i, +gr.value || 0); if (isMass(i.unidade)) { i.qtd = i.gramas; q.value = i.qtd; } upd(); };
+      el.querySelector(".x").onclick = () => { rec.ingredientes.splice(idx, 1); drawIngs(); };
+      upd();
+      box.append(el);
+    });
+    recTotals();
+  }
+  function recTotals(){
+    const t = (rec?.ingredientes||[]).reduce((a,i)=>({kcal:a.kcal+(i.kcal||0),p:a.p+(i.p||0),c:a.c+(i.c||0),g:a.g+(i.g||0),w:a.w+(+i.gramas||0)}),{kcal:0,p:0,c:0,g:0,w:0});
+    const n = +$("rPorc").value || 1, peso = +$("rPeso").value || 0;
+    $("rTot").textContent = fmt(t.kcal);
+    $("rPer").textContent = fmt(t.kcal/n);
+    $("rPerM").textContent = `Por porção: proteína ${fmt(t.p/n)} g · carbo ${fmt(t.c/n)} g · gordura ${fmt(t.g/n)} g`;
+    $("r100").textContent = peso ? `${fmt(t.kcal/peso*100)} kcal por 100 g da receita pronta · cada porção pesa cerca de ${fmt(peso/n)} g`
+      : `Ingredientes somam ${fmt(t.w)} g. Pese a receita pronta e informe acima para saber as calorias por 100 g.`;
+    return t;
+  }
+  $("rPorc").oninput = recTotals; $("rPeso").oninput = recTotals;
+
+  async function parseRecipe(text, blob){
+    if (!sample) { rsay("O cálculo pelo Claude não está disponível nesta visualização. Adicione os ingredientes pela busca na TACO.", true); return; }
+    if (!text && !blob) { rsay("Escreva ou cole os ingredientes primeiro.", true); $("rTxt").focus(); return; }
+    await loadTaco();
+    const tacoList = (taco||[]).map(t => t.id + "|" + t.nome).join("\n");
+    rsay(blob ? "Lendo a receita da foto…" : "Calculando os ingredientes…");
+    $("rParse").disabled = true;
+    const prompt = `Você é um nutricionista brasileiro. ${blob ? "A imagem anexada mostra uma receita escrita (caderno, livro, print ou embalagem).\n" : ""}${text ? "Receita ou ingredientes informados pelo usuário:\n" + text + "\n" : ""}
+Extraia cada ingrediente com a quantidade e a medida como escritas (ex.: 2 xícaras, 1 colher de sopa, 3 unidades médias, 200 g). Converta cada um para gramas usando as medidas caseiras brasileiras (xícara 240 ml, colher de sopa 15 ml, colher de chá 5 ml) e a densidade típica do ingrediente (ex.: 1 xícara de farinha de trigo ≈ 120 g; de açúcar ≈ 180 g; de óleo ≈ 220 g; 1 ovo ≈ 50 g; 1 cenoura média ≈ 120 g).
+Ignore água e itens "a gosto" sem caloria relevante. Para cada ingrediente, escolha na Tabela TACO abaixo o item correspondente (mesmo alimento e estado: cru, cozido etc.) e informe "taco_id"; se nenhum corresponder, use null e informe em "por100" kcal e macros por 100 g estimados.
+Responda SOMENTE com JSON:
+{"nome":"nome da receita ou vazio","porcoes":number|null,"preparo":"modo de preparo se houver, senão vazio","ingredientes":[{"nome":"string","qtd":number,"unidade":"string","gramas":number,"taco_id":number|null,"por100":{"kcal":number,"proteina":number,"carbo":number,"gordura":number}|null}]}
+
+TABELA TACO (id|alimento):
+${tacoList}`;
+    try {
+      const opts = {modelTier:"default"}; if (blob) opts.images = [blob];
+      const out = await sample.json(prompt, opts);
+      if (!rec) return;
+      const byId = new Map((taco||[]).map(t => [t.id, t]));
+      const novos = (Array.isArray(out?.ingredientes) ? out.ingredientes : []).map(x => {
+        const t = byId.get(Number(x.taco_id)), pv = x.por100 || {};
+        const per100 = t ? {kcal:t.kcal, p:t.p, c:t.c, g:t.g} : {kcal:+pv.kcal||0, p:+pv.proteina||0, c:+pv.carbo||0, g:+pv.gordura||0};
+        const i = {nome:String(x.nome||"Ingrediente"), qtd:+x.qtd||0, unidade:String(x.unidade||""), gramas:0, per100, fonte: t ? "TACO: " + t.nome : "Estimativa do Claude", kcal:0,p:0,c:0,g:0};
+        setGrams(i, +x.gramas||0); return i;
+      });
+      if (!novos.length) { rsay("Não encontrei ingredientes. Escreva um por linha, com a medida.", true); return; }
+      const wasEmpty = !rec.ingredientes.length;
+      rec.ingredientes.push(...novos);
+      if (!$("rNome").value.trim() && out?.nome) $("rNome").value = String(out.nome);
+      if (out?.porcoes > 0 && wasEmpty) $("rPorc").value = Math.round(out.porcoes);
+      if (!$("rPrep").value.trim() && out?.preparo) $("rPrep").value = String(out.preparo);
+      $("rTxt").value = "";
+      drawIngs();
+      rsay("Confira as medidas e os gramas de cada ingrediente. Se mudar a quantidade, as calorias se recalculam.");
+    } catch (e) {
+      if (e?.code === "cancelled") return;
+      rsay(e?.code === "not_granted" ? "Você não permitiu o uso do Claude nesta página." :
+           e?.code === "rate_limited" ? "Muitos cálculos seguidos. Espere um minuto e tente de novo." :
+           "Não consegui calcular. Tente de novo, com um ingrediente por linha.", true);
+    } finally { $("rParse").disabled = false; }
+  }
+  $("rParse").onclick = () => parseRecipe($("rTxt").value.trim(), null);
+  ["rTxtCam","rTxtGal"].forEach(id => $(id).addEventListener("change", async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!isImg(f)) return;
+    try { const b = await resize(await loadImg(f), 1600, 0.9).blob; parseRecipe($("rTxt").value.trim(), b); }
+    catch { rsay("Não consegui abrir essa imagem.", true); }
+  }));
+
+  let rq = null;
+  $("rAddQ").addEventListener("input", () => { clearTimeout(rq); rq = setTimeout(async () => {
+    await loadTaco();
+    const q = $("rAddQ").value.trim(), box = $("rAddRes");
+    box.innerHTML = ""; box.hidden = !q; if (!q) return;
+    const res = searchTaco(q, 8);
+    res.forEach(t => {
+      const b = document.createElement("button"); b.type = "button";
+      b.innerHTML = `<span class="n"></span><span class="num small muted"></span>`;
+      b.querySelector(".n").textContent = t.nome; b.querySelector(".num").textContent = fmt(t.kcal) + " kcal/100 g";
+      b.onclick = () => {
+        const i = {nome:t.nome, qtd:100, unidade:"g", gramas:0, per100:{kcal:t.kcal,p:t.p,c:t.c,g:t.g}, fonte:"TACO", kcal:0,p:0,c:0,g:0};
+        setGrams(i, 100); rec.ingredientes.push(i); drawIngs();
+        $("rAddQ").value = ""; box.hidden = true;
+        $("ri-q-" + (rec.ingredientes.length-1))?.focus();
+      };
+      box.append(b);
+    });
+    const b = document.createElement("button"); b.type = "button";
+    b.innerHTML = `<span class="n"></span>`; b.querySelector(".n").textContent = `Calcular "${q}" com o Claude`;
+    b.onclick = () => { box.hidden = true; $("rAddQ").value = ""; parseRecipe(q, null); };
+    box.append(b);
+  }, 120); });
+
+  $("rSave").onclick = async () => {
+    if (!rec || !store) return;
+    const nome = $("rNome").value.trim();
+    if (!nome) { rsay("Dê um nome à receita.", true); $("rNome").focus(); return; }
+    if (!rec.ingredientes.length) { rsay("Adicione pelo menos um ingrediente.", true); return; }
+    const t = recTotals(), r1 = x => Math.round((+x||0)*10)/10;
+    const doc = {
+      nome: nome.slice(0,80), foto: recPhoto || "", porcoes: +$("rPorc").value || 1, peso_pronto: +$("rPeso").value || null,
+      preparo: $("rPrep").value.slice(0,4000),
+      ingredientes: rec.ingredientes.map(i => ({nome:String(i.nome||"").slice(0,80), qtd:+i.qtd||0, unidade:String(i.unidade||"").slice(0,40), gramas:r1(i.gramas),
+        per100: i.per100 ? {kcal:r1(i.per100.kcal), p:r1(i.per100.p), c:r1(i.per100.c), g:r1(i.per100.g)} : null,
+        kcal:r1(i.kcal), p:r1(i.p), c:r1(i.c), g:r1(i.g), fonte:String(i.fonte||"")})),
+      kcal: Math.round(t.kcal), p: r1(t.p), c: r1(t.c), g: r1(t.g), updated: Date.now()
+    };
+    $("rSave").disabled = true;
+    try { await store.saveRecipe(rec.id, doc); closeEditor(); $("rListStatus").textContent = "Receita salva."; }
+    catch (e) { rsay("Não consegui salvar a receita (" + (e?.code||"erro") + "). Tente de novo.", true); }
+    finally { $("rSave").disabled = false; }
+  };
+  $("rDel").onclick = async () => {
+    const del = $("rDel");
+    if (!del.dataset.armed) { del.dataset.armed = "1"; del.textContent = "Toque de novo para excluir"; return; }
+    try { await store.removeRecipe(rec.id); closeEditor(); $("rListStatus").textContent = "Receita excluída."; }
+    catch { rsay("Não consegui excluir a receita.", true); }
+  };
+
+  render();
+  initStore();
+  initSample();
+})();
+</script>
+</body></html>
