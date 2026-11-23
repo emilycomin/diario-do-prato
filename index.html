@@ -164,7 +164,11 @@ textarea{resize:vertical;min-height:44px}
 .ing .x{border:0;background:none;color:var(--muted);font-size:1.2rem;padding:0 4px}
 .ing .meas{grid-column:1/-1;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .ing .meas input{padding:6px 8px}
-.ing .q{width:60px}.ing .u{flex:1 1 110px;min-width:0;width:auto}.ing .gr{width:80px}
+.ing .q{width:64px}.ing .u{flex:1 1 150px;min-width:0;width:auto}.ing .gr{width:80px}
+.qty{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;align-items:center}
+.qty label,.qty .kc{grid-column:1/-1}.qty input,.qty select{width:100%;min-width:0}
+.ing .meas{display:grid;grid-template-columns:64px minmax(0,1fr);gap:6px 8px;align-items:center}
+.ing .meas .q,.ing .meas .u{width:100%}.ing .grw{display:flex;align-items:center;gap:6px}.ing .meas .kc{justify-self:end;margin-left:0}
 .ing .kc{margin-left:auto;font-weight:600}
 .ing .src{grid-column:1/-1;padding-left:2px}
 .rtot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -897,6 +901,72 @@ Responda SOMENTE com JSON:
   }
   ["lblCam","lblGal"].forEach(id => $(id).addEventListener("change", e => { onLabelFile(e.target.files[0]); e.target.value = ""; }));
 
+  // ---------- medidas caseiras ----------
+  // Volumes de referência (ml). Colheres e xícaras rasas, como nas receitas brasileiras;
+  // "colher de sopa cheia", "colher de servir", "escumadeira" e "concha" para comida pronta.
+  const VOLS = [["colher-cha","colher de chá",5],["colher-sobremesa","colher de sobremesa",10],["colher-sopa","colher de sopa",15],
+    ["colher-sopa-cheia","colher de sopa cheia",25],["colher-servir","colher de servir",45],["escumadeira","escumadeira",90],
+    ["concha","concha média",100],["copo","copo americano",190],["xicara","xícara",240],["ml","ml",1],["litro","litro",1000]];
+  // Peso médio de peças (g), pelo nome do alimento sem acento.
+  const PIECES = [
+    [/^ovo,|ovo de galinha/,[["unid","unidade",50]]],[/clara/,[["unid","clara",30]]],[/gema/,[["unid","gema",17]]],
+    [/^banana/,[["unid","unidade média",70]]],[/^maca,/,[["unid","unidade média",130]]],[/^pera,/,[["unid","unidade média",140]]],
+    [/^laranja/,[["unid","unidade média",150]]],[/^tangerina|mexerica|bergamota/,[["unid","unidade média",100]]],
+    [/^kiwi/,[["unid","unidade",75]]],[/^pessego/,[["unid","unidade",110]]],[/^manga,/,[["unid","unidade média",250]]],
+    [/^morango/,[["unid","unidade",12]]],[/^uva,/,[["unid","bago",5]]],[/^abacate/,[["unid","unidade média",400]]],
+    [/^mamao/,[["fatia","fatia média",150]]],[/^melancia|^melao/,[["fatia","fatia média",200]]],[/^abacaxi/,[["fatia","fatia média",80]]],
+    [/^pao,.*forma|pao de forma/,[["fatia","fatia",25]]],[/^pao,.*frances|pao frances/,[["unid","unidade (pão francês)",50]]],
+    [/pao de queijo/,[["unid","unidade média",25]]],[/^torrada/,[["unid","unidade",8]]],[/^biscoito/,[["unid","unidade",6]]],
+    [/^queijo/,[["fatia","fatia",20]]],[/presunto|mortadela|peito de peru|salame/,[["fatia","fatia",15]]],
+    [/^tomate/,[["unid","unidade média",100]]],[/^cebola/,[["unid","unidade média",100]]],[/^cenoura/,[["unid","unidade média",120]]],
+    [/^batata, doce|batata-doce|batata doce/,[["unid","unidade média",150]]],[/^batata/,[["unid","unidade média",140]]],
+    [/^alho/,[["dente","dente",4]]],[/^pepino/,[["unid","unidade média",150]]],[/^abobrinha/,[["unid","unidade média",200]]],
+    [/^chuchu/,[["unid","unidade média",200]]],[/^pimentao/,[["unid","unidade média",120]]],[/^limao/,[["unid","unidade média",70]]],
+    [/^frango,.*(peito|file)/,[["file","filé médio",120]]],[/^frango,.*(coxa|sobrecoxa)/,[["unid","unidade",100]]],
+    [/^carne, bovina|bife/,[["bife","bife médio",100]]],[/^linguica/,[["unid","gomo",60]]],[/^salsicha/,[["unid","unidade",50]]],
+    [/^bolo/,[["fatia","fatia média",60]]],[/^pizza/,[["fatia","fatia",110]]],[/^tapioca/,[["unid","unidade média",60]]],
+    [/castanha-do-para|castanha do para/,[["unid","unidade",4]]]];
+  // Densidade típica (g/ml): primeiro pelo nome, depois pela categoria da TACO.
+  function density(nome, cat){
+    const n = norm(nome), c = norm(cat);
+    const byName = [[/farinha.*trigo|farinha de trigo/,.5],[/farinha|fuba|amido|polvilho|maisena/,.55],[/aveia|granola|coco, ralado|coco ralado/,.35],
+      [/queijo.*ralado|parmesao/,.35],[/cacau|achocolatado|chocolate.*po/,.45],[/acucar.*mascavo/,.6],[/acucar/,.8],
+      [/^sal,|^sal$|sal refinado|sal grosso/,1.2],[/^mel,|^mel$|melado/,1.4],[/leite condensado/,1.3],[/oleo|azeite/,.92],
+      [/manteiga|margarina/,.95],[/creme de leite|requeijao/,1],[/leite|iogurte/,1.03],[/arroz.*cru/,.85],[/arroz/,.65],[/feijao/,.85],
+      [/sopa|caldo|suco|refrigerante|^cafe|^cha,|^agua|bebida/,1],[/alface|rucula|agriao|couve|espinafre|folha/,.2]];
+    for (const [re, d] of byName) if (re.test(n)) return d;
+    const byCat = [[/bebida/,1],[/leite/,1.03],[/gordura|oleo/,.92],[/verdura|hortalica/,.5],[/fruta/,.65],[/cereai/,.6],
+      [/leguminosa/,.8],[/carne|pescado/,.7],[/acucar/,.8],[/noz|semente/,.55]];
+    for (const [re, d] of byCat) if (re.test(c)) return d;
+    return .7;
+  }
+  // Lista de medidas para um alimento: {id, label, g} = gramas por 1 unidade da medida.
+  function measuresFor(f){
+    const n = norm(f.nome || ""), d = density(f.nome || "", f.cat || "");
+    const out = [{id:"g", label:"g", g:1}];
+    if (+f.porcao_g > 0) out.push({id:"porcao", label:"porção" + (f.porcao_desc ? ` (${f.porcao_desc})` : ` (${fmt(f.porcao_g)} g)`), g:+f.porcao_g});
+    for (const [re, list] of PIECES) if (re.test(n)) { list.forEach(([id, label, g]) => out.push({id, label, g})); break; }
+    VOLS.forEach(([id, label, ml]) => out.push({id, label, g: ml * d}));
+    out.push({id:"kg", label:"kg", g:1000});
+    return out;
+  }
+  const fmtG = g => g >= 10 ? fmt(g) : fmt1(g);
+  function fillUnits(sel, opts){
+    sel.innerHTML = "";
+    opts.forEach(o => { const op = document.createElement("option"); op.value = o.id;
+      op.textContent = o.label + (["g","kg","porcao","custom"].includes(o.id) ? "" : ` (≈ ${fmtG(o.g)} g)`); sel.append(op); });
+  }
+  function matchUnit(t, opts){
+    const n = norm(t).trim(); if (!n) return null;
+    const by = id => opts.find(o => o.id === id);
+    const tests = [[/^(g|gr|grama|gramas)$/,"g"],[/^(kg|quilo)/,"kg"],[/^(ml|mililitro)/,"ml"],[/^(l|litro)/,"litro"],[/xicara/,"xicara"],[/copo/,"copo"],
+      [/sobremesa/,"colher-sobremesa"],[/colher.*cha|colherinha/,"colher-cha"],[/colher.*sopa.*cheia/,"colher-sopa-cheia"],[/colher.*sopa|^cs$/,"colher-sopa"],
+      [/colher.*servir|colher de arroz/,"colher-servir"],[/escumadeira/,"escumadeira"],[/concha/,"concha"],[/porcao/,"porcao"],[/fatia/,"fatia"],
+      [/dente/,"dente"],[/bife/,"bife"],[/file/,"file"],[/unidade|^unid|media|grande|pequena|^un$/,"unid"]];
+    for (const [re, id] of tests) if (re.test(n) && by(id)) return by(id);
+    return opts.find(o => norm(o.label) === n) || null;
+  }
+
   // product / food card shared by barcode and TACO
   function showProduct(p, box, isNew){
     box.hidden = false;
@@ -908,30 +978,36 @@ Responda SOMENTE com JSON:
         <div><b>${fmt(per.kcal)}</b><span>kcal</span></div><div><b>${fmt1(per.p)}</b><span>prot. g</span></div>
         <div><b>${fmt1(per.c)}</b><span>carbo g</span></div><div><b>${fmt1(per.g)}</b><span>gord. g</span></div>
       </div>
-      <div class="qty"><label class="small" for="${box.id}-g">Quanto você comeu?</label>
-        <input class="inp num" id="${box.id}-g" type="number" min="1" inputmode="decimal"> <span class="small">g</span>
-        ${p.porcao_g ? `<button class="btn ghost sm porc" type="button"></button>` : ""}
+      <div class="qty"><label class="small" for="${box.id}-q">Quanto você comeu?</label>
+        <input class="inp num" id="${box.id}-q" type="number" min="0" step="any" inputmode="decimal">
+        <select class="inp" id="${box.id}-u" aria-label="Medida"></select>
         <span class="small muted kc num"></span></div>
       <button class="btn add" type="button">Adicionar à refeição</button>`;
     if (isNew) box.querySelector(".pname").value = p.nome; else box.querySelector(".pn").textContent = p.nome;
     box.querySelector(".pm").textContent = [p.marca, p.code ? "código " + p.code : p.cat].filter(Boolean).join(" · ");
     box.querySelector(".pill").textContent = p.fonte === "Rótulo" ? "lido do rótulo" : p.fonte;
-    const gi = box.querySelector("#"+box.id+"-g");
-    gi.value = p.porcao_g || 100;
-    const upd = () => box.querySelector(".kc").textContent = "= " + fmt(per.kcal*(+gi.value||0)/100) + " kcal";
-    gi.oninput = upd; upd();
-    const pb = box.querySelector(".porc");
-    if (pb) { pb.textContent = "1 porção" + (p.porcao_desc ? ` (${p.porcao_desc})` : ` (${fmt(p.porcao_g)} g)`); pb.onclick = () => { gi.value = p.porcao_g; upd(); }; }
+    const qi = box.querySelector("#"+box.id+"-q"), ui = box.querySelector("#"+box.id+"-u");
+    const opts = measuresFor(p); fillUnits(ui, opts);
+    const first = opts.find(o => o.id === "porcao") || opts.find(o => ["unid","fatia","file","bife","dente"].includes(o.id));
+    ui.value = first ? first.id : "g"; qi.value = first ? 1 : 100;
+    const unit = () => opts.find(o => o.id === ui.value) || opts[0];
+    const grams = () => (+qi.value || 0) * unit().g;
+    const upd = () => { const g = grams();
+      box.querySelector(".kc").textContent = (unit().id === "g" ? "= " : "≈ " + fmt(g) + " g · ") + fmt(per.kcal * g / 100) + " kcal"; };
+    qi.oninput = upd;
+    ui.onchange = () => { if (ui.value === "g" && +qi.value < 5) qi.value = 100; else if (ui.value !== "g" && +qi.value >= 20) qi.value = 1; upd(); };
+    upd();
     box.querySelector(".add").onclick = async () => {
-      const gr = +gi.value || 0; if (!gr) { gi.focus(); return; }
+      const gr = grams(); if (!gr) { qi.focus(); return; }
+      const u = unit(), medida = u.id === "g" ? "" : fmt1(+qi.value) + " × " + u.label;
       if (isNew) p.nome = box.querySelector(".pname").value.trim() || p.nome;
       if (p.code && p.fonte === "Rótulo") { try { await store?.saveProduct({...p, savedAt: Date.now()}); } catch {} }
-      const label = p.fonte === "TACO" ? "TACO" : p.fonte + (p.marca ? " · " + p.marca : "");
+      const label = (p.fonte === "TACO" ? "TACO" : p.fonte + (p.marca ? " · " + p.marca : "")) + (medida ? " · " + medida : "");
       addItems([mkItem(p.nome, gr, {...per}, label)], p.nome);
       box.hidden = true; say("Adicionado. Junte mais itens ou salve a refeição.");
       if (box.id === "tacoCard") { $("tacoQ").value = ""; $("tacoRes").hidden = true; }
     };
-    gi.focus(); gi.select();
+    qi.focus(); qi.select();
   }
 
   // ---------- 3. TACO search ----------
@@ -1140,22 +1216,34 @@ Responda SOMENTE com JSON:
       const el = document.createElement("div"); el.className = "ing";
       el.innerHTML = `<input class="inp nm" id="ri-n-${idx}" aria-label="Ingrediente"><button class="x" type="button" aria-label="Remover ingrediente">×</button>
         <div class="meas"><input class="inp num q" id="ri-q-${idx}" type="number" min="0" step="any" inputmode="decimal" aria-label="Quantidade">
-        <input class="inp u" id="ri-u-${idx}" aria-label="Medida" placeholder="medida"><span class="small muted">=</span>
-        <input class="inp num gr" id="ri-g-${idx}" type="number" min="0" step="any" inputmode="decimal" aria-label="Gramas"><span class="small muted">g</span>
+        <select class="inp u" id="ri-u-${idx}" aria-label="Medida"></select>
+        <span class="grw"><span class="small muted">=</span><input class="inp num gr" id="ri-g-${idx}" type="number" min="0" step="any" inputmode="decimal" aria-label="Gramas"><span class="small muted">g</span></span>
         <span class="kc num small"></span></div><span class="src"></span>`;
-      const [nm, q, u, gr] = el.querySelectorAll("input");
+      const [nm, q, gr] = el.querySelectorAll("input"), u = el.querySelector("select");
       const kc = el.querySelector(".kc");
-      nm.value = i.nome || ""; q.value = i.qtd ?? ""; u.value = i.unidade || ""; gr.value = Math.round((+i.gramas||0)*10)/10;
+      const opts = measuresFor({nome:i.nome, cat:i.cat});
+      let cur = opts.find(o => o.id === i.uid) || matchUnit(i.unidade, opts);
+      if (!cur && i.unidade) { cur = {id:"custom", label:i.unidade, g: +i.gpu || (+i.qtd > 0 ? i.gramas / i.qtd : 0)}; opts.push(cur); }
+      if (!cur) cur = opts[0];
+      fillUnits(u, opts); u.value = cur.id;
+      i.uid = cur.id; i.unidade = cur.label;
+      if (!(+i.gpu > 0)) i.gpu = +i.qtd > 0 && +i.gramas > 0 ? i.gramas / i.qtd : cur.g;
+      nm.value = i.nome || ""; q.value = i.qtd ?? ""; gr.value = Math.round((+i.gramas||0)*10)/10;
       el.querySelector(".src").textContent = i.fonte || "";
       const upd = () => { kc.textContent = fmt(i.kcal) + " kcal"; recTotals(); };
       nm.oninput = () => i.nome = nm.value;
-      u.oninput = () => i.unidade = u.value;
-      q.oninput = () => {
-        const nq = +q.value || 0;
-        if (isMass(i.unidade)) setGrams(i, nq); else if (+i.qtd > 0) setGrams(i, i.gramas*nq/i.qtd);
-        i.qtd = nq; gr.value = Math.round(i.gramas*10)/10; upd();
+      const showG = () => gr.value = Math.round(i.gramas*10)/10;
+      u.onchange = () => {
+        const o = opts.find(x => x.id === u.value) || opts[0];
+        if (o.id === "g" && +i.qtd < 5) { i.qtd = Math.round(i.gramas) || 100; q.value = i.qtd; }
+        i.uid = o.id; i.unidade = o.label; i.gpu = o.g; setGrams(i, (+i.qtd || 0) * i.gpu); showG(); upd();
       };
-      gr.oninput = () => { setGrams(i, +gr.value || 0); if (isMass(i.unidade)) { i.qtd = i.gramas; q.value = i.qtd; } upd(); };
+      q.oninput = () => { i.qtd = +q.value || 0; setGrams(i, i.qtd * i.gpu); showG(); upd(); };
+      gr.oninput = () => {
+        setGrams(i, +gr.value || 0);
+        if (i.uid === "g") { i.qtd = Math.round(i.gramas*10)/10; q.value = i.qtd; } else if (+i.qtd > 0) i.gpu = i.gramas / i.qtd;
+        upd();
+      };
       el.querySelector(".x").onclick = () => { rec.ingredientes.splice(idx, 1); drawIngs(); };
       upd();
       box.append(el);
@@ -1197,7 +1285,7 @@ ${tacoList}`;
       const novos = (Array.isArray(out?.ingredientes) ? out.ingredientes : []).map(x => {
         const t = byId.get(Number(x.taco_id)), pv = x.por100 || {};
         const per100 = t ? {kcal:t.kcal, p:t.p, c:t.c, g:t.g} : {kcal:+pv.kcal||0, p:+pv.proteina||0, c:+pv.carbo||0, g:+pv.gordura||0};
-        const i = {nome:String(x.nome||"Ingrediente"), qtd:+x.qtd||0, unidade:String(x.unidade||""), gramas:0, per100, fonte: t ? "TACO: " + t.nome : "Estimativa do " + aiName, kcal:0,p:0,c:0,g:0};
+        const i = {nome:String(x.nome||"Ingrediente"), qtd:+x.qtd||0, unidade:String(x.unidade||""), gramas:0, per100, fonte: t ? "TACO: " + t.nome : "Estimativa do " + aiName, cat: t ? t.cat : "", kcal:0,p:0,c:0,g:0};
         setGrams(i, +x.gramas||0); return i;
       });
       if (!novos.length) { rsay("Não encontrei ingredientes. Escreva um por linha, com a medida.", true); return; }
@@ -1232,7 +1320,7 @@ ${tacoList}`;
       b.innerHTML = `<span class="n"></span><span class="num small muted"></span>`;
       b.querySelector(".n").textContent = t.nome; b.querySelector(".num").textContent = fmt(t.kcal) + " kcal/100 g";
       b.onclick = () => {
-        const i = {nome:t.nome, qtd:100, unidade:"g", gramas:0, per100:{kcal:t.kcal,p:t.p,c:t.c,g:t.g}, fonte:"TACO", kcal:0,p:0,c:0,g:0};
+        const i = {nome:t.nome, qtd:100, unidade:"g", uid:"g", gpu:1, cat:t.cat, gramas:0, per100:{kcal:t.kcal,p:t.p,c:t.c,g:t.g}, fonte:"TACO", kcal:0,p:0,c:0,g:0};
         setGrams(i, 100); rec.ingredientes.push(i); drawIngs();
         $("rAddQ").value = ""; box.hidden = true;
         $("ri-q-" + (rec.ingredientes.length-1))?.focus();
@@ -1254,7 +1342,7 @@ ${tacoList}`;
     const doc = {
       nome: nome.slice(0,80), foto: recPhoto || "", porcoes: +$("rPorc").value || 1, peso_pronto: +$("rPeso").value || null,
       preparo: $("rPrep").value.slice(0,4000),
-      ingredientes: rec.ingredientes.map(i => ({nome:String(i.nome||"").slice(0,80), qtd:+i.qtd||0, unidade:String(i.unidade||"").slice(0,40), gramas:r1(i.gramas),
+      ingredientes: rec.ingredientes.map(i => ({nome:String(i.nome||"").slice(0,80), qtd:+i.qtd||0, unidade:String(i.unidade||"").slice(0,40), uid:String(i.uid||"").slice(0,30), gpu:Math.round((+i.gpu||0)*1000)/1000, cat:String(i.cat||"").slice(0,60), gramas:r1(i.gramas),
         per100: i.per100 ? {kcal:r1(i.per100.kcal), p:r1(i.per100.p), c:r1(i.per100.c), g:r1(i.per100.g)} : null,
         kcal:r1(i.kcal), p:r1(i.p), c:r1(i.c), g:r1(i.g), fonte:String(i.fonte||"")})),
       kcal: Math.round(t.kcal), p: r1(t.p), c: r1(t.c), g: r1(t.g), updated: Date.now()
