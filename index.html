@@ -1,4 +1,4 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style></head><body>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style><script src="config.js"></script></head><body>
 <title>Diário do Prato</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -149,6 +149,9 @@ textarea{resize:vertical;min-height:44px}
 .rtot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .rtot>div{background:var(--soft);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column}
 .rtot b{font-family:var(--display);font-size:1.35rem}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
+.acct{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:-12px;overflow-wrap:anywhere}
+.authlinks{display:flex;gap:16px;flex-wrap:wrap}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 
@@ -161,6 +164,23 @@ textarea{resize:vertical;min-height:44px}
       <button class="iconbtn" id="nextDay" aria-label="Próximo dia">›</button>
     </div>
   </header>
+
+  <div class="acct small muted" id="acct" hidden><span id="acctEmail"></span><span aria-hidden="true">·</span><button class="linkbtn" id="signOut" type="button">Sair</button></div>
+
+  <section class="card capture" id="authBox" aria-labelledby="authH" hidden>
+    <h2 id="authH">Entrar</h2>
+    <p class="small muted hint" id="authHint">Entre com seu e-mail e senha para ver o seu diário em qualquer aparelho.</p>
+    <form class="panel" id="authForm">
+      <div class="field" id="authEmailF"><label class="label" for="authEmail">E-mail</label><input class="inp" id="authEmail" type="email" autocomplete="email" required></div>
+      <div class="field"><label class="label" for="authPass" id="authPassL">Senha</label><input class="inp" id="authPass" type="password" autocomplete="current-password" minlength="6" required></div>
+      <button class="btn" id="authSubmit" type="submit">Entrar</button>
+    </form>
+    <div class="authlinks small" id="authLinks">
+      <button class="linkbtn" id="authToggle" type="button">Criar conta</button>
+      <button class="linkbtn" id="authForgot" type="button">Esqueci a senha</button>
+    </div>
+    <div class="status" id="authStatus" role="status"></div>
+  </section>
 
   <nav class="tabs viewnav" role="tablist" aria-label="Seções">
     <button role="tab" id="nav-diario" aria-selected="true" aria-controls="v-diario">Diário</button>
@@ -359,9 +379,127 @@ textarea{resize:vertical;min-height:44px}
       async removeRecipe(id){ o.receitas = o.receitas.filter(r => r.id!==id); recipes = o.receitas; persist(); renderRecipes(); }
     };
   }
+  // ---------- Supabase (fora do Claude, quando config.js existe) ----------
+  const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js";
+  function loadScript(src){ return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.append(s); }); }
+  function chk({data, error}){ if (error) { const e = new Error(error.message); e.code = error.code || error.message; throw e; } return data; }
+  function authMsg(e){
+    const c = e?.code || "", m = e?.message || "";
+    if (c === "invalid_credentials" || /invalid login/i.test(m)) return "E-mail ou senha incorretos.";
+    if (c === "email_not_confirmed" || /not confirmed/i.test(m)) return "Confirme o seu e-mail pelo link que enviamos antes de entrar.";
+    if (c === "user_already_exists" || /already registered/i.test(m)) return "Já existe uma conta com esse e-mail. Use \"Entrar\".";
+    if (c === "weak_password" || /password/i.test(m) && /least|weak/i.test(m)) return "A senha precisa ter pelo menos 6 caracteres.";
+    if (/rate_limit/.test(c) || /rate limit/i.test(m)) return "Muitas tentativas seguidas. Espere alguns minutos e tente de novo.";
+    if (c === "same_password") return "A nova senha precisa ser diferente da anterior.";
+    return "Não deu certo (" + (m || c || "erro") + ").";
+  }
+  function showAuth(on){
+    $("authBox").hidden = !on; $("acct").hidden = on;
+    document.querySelector(".viewnav").hidden = on; $("daynav").hidden = on;
+    if (on) { $("v-diario").hidden = true; $("v-receitas").hidden = true; } else showView("diario");
+  }
+  let authMode = "login";
+  function setAuthMode(mode){
+    authMode = mode;
+    const T = {login:["Entrar","Entre com seu e-mail e senha para ver o seu diário em qualquer aparelho.","Entrar","Criar conta"],
+               signup:["Criar conta","Escolha um e-mail e uma senha (pelo menos 6 caracteres). Vamos mandar um link de confirmação.","Criar conta","Já tenho conta"],
+               reset:["Nova senha","Digite a nova senha para a sua conta.","Salvar nova senha",""]}[mode];
+    $("authH").textContent = T[0]; $("authHint").textContent = T[1]; $("authSubmit").textContent = T[2];
+    $("authToggle").textContent = T[3]; $("authLinks").hidden = mode === "reset";
+    $("authForgot").hidden = mode !== "login";
+    $("authEmailF").hidden = mode === "reset"; $("authEmail").required = mode !== "reset";
+    $("authPassL").textContent = mode === "reset" ? "Nova senha" : "Senha";
+    $("authPass").autocomplete = mode === "login" ? "current-password" : "new-password";
+    $("authStatus").textContent = ""; $("authStatus").classList.remove("err");
+  }
+  async function supabaseStore(cfg){
+    await loadScript(SUPABASE_JS);
+    const sb = window.supabase.createClient(cfg.url, cfg.key);
+    const here = location.origin + location.pathname;
+    const asay = (t, err) => { const s = $("authStatus"); s.textContent = t || ""; s.classList.toggle("err", !!err); };
+    let uid = null, recovering = false;
+
+    async function loadAll(){
+      say("Carregando o seu diário…");
+      try {
+        const [m, r, s] = await Promise.all([
+          sb.from("meals").select("*").order("ts", {ascending:false}).limit(1000).then(chk),
+          sb.from("recipes").select("*").then(chk),
+          sb.from("settings").select("goal").maybeSingle().then(chk)]);
+        meals = m; recipes = r; goal = Number(s?.goal) || 2000;
+        render(); renderRecipes(); say("");
+      } catch (e) { say("Não consegui carregar o diário (" + (e.code || "erro") + "). Recarregue a página.", true); }
+    }
+    async function reloadRecipes(){ recipes = chk(await sb.from("recipes").select("*")); renderRecipes(); }
+
+    sb.auth.onAuthStateChange((ev, session) => {
+      if (ev === "PASSWORD_RECOVERY") { recovering = true; setAuthMode("reset"); showAuth(true); }
+      const u = session?.user || null;
+      if (!u) {
+        uid = null; recovering = false; meals = []; recipes = []; goal = 2000; render(); renderRecipes();
+        if (authMode === "reset") setAuthMode("login");
+        showAuth(true); return;
+      }
+      if (recovering) return;
+      $("acctEmail").textContent = u.email || "";
+      showAuth(false);
+      if (u.id !== uid) { uid = u.id; setTimeout(loadAll, 0); }
+    });
+
+    $("authToggle").onclick = () => setAuthMode(authMode === "login" ? "signup" : "login");
+    $("authForgot").onclick = async () => {
+      const email = $("authEmail").value.trim();
+      if (!email) { asay("Digite o seu e-mail acima e toque de novo em \"Esqueci a senha\".", true); $("authEmail").focus(); return; }
+      const { error } = await sb.auth.resetPasswordForEmail(email, {redirectTo: here});
+      asay(error ? authMsg(error) : "Se houver uma conta com esse e-mail, enviamos um link para criar uma nova senha.", !!error);
+    };
+    $("authForm").addEventListener("submit", async e => {
+      e.preventDefault();
+      const email = $("authEmail").value.trim(), password = $("authPass").value;
+      $("authSubmit").disabled = true; asay("Aguarde…");
+      try {
+        if (authMode === "login") {
+          const { error } = await sb.auth.signInWithPassword({email, password});
+          if (error) throw error;
+          asay(""); $("authPass").value = "";
+        } else if (authMode === "signup") {
+          const { data, error } = await sb.auth.signUp({email, password, options:{emailRedirectTo: here}});
+          if (error) throw error;
+          $("authPass").value = "";
+          if (!data.session) { setAuthMode("login"); asay("Enviamos um link de confirmação para " + email + ". Abra o link e depois entre aqui."); }
+        } else {
+          const { error } = await sb.auth.updateUser({password});
+          if (error) throw error;
+          $("authPass").value = ""; recovering = false; setAuthMode("login");
+          const { data } = await sb.auth.getSession();
+          if (data.session) { $("acctEmail").textContent = data.session.user.email || ""; showAuth(false); uid = data.session.user.id; loadAll(); }
+          say("Senha alterada.");
+        }
+      } catch (err) { asay(authMsg(err), true); }
+      finally { $("authSubmit").disabled = false; }
+    });
+    $("signOut").onclick = () => sb.auth.signOut();
+
+    return {
+      async save(m){ const row = chk(await sb.from("meals").insert(m).select().single()); meals.push(row); render(); },
+      async remove(id){ chk(await sb.from("meals").delete().eq("id", id)); meals = meals.filter(x => x.id !== id); render(); },
+      async saveGoal(g){ goal = g; render(); chk(await sb.from("settings").upsert({user_id: uid, goal: g})); },
+      async getProduct(code){ const r = chk(await sb.from("products").select("data").eq("code", code).maybeSingle()); return r?.data || null; },
+      async saveProduct(p){ chk(await sb.from("products").upsert({user_id: uid, code: p.code, data: p})); },
+      async saveRecipe(id, d){ chk(await (id ? sb.from("recipes").update(d).eq("id", id) : sb.from("recipes").insert(d))); await reloadRecipes(); },
+      async removeRecipe(id){ chk(await sb.from("recipes").delete().eq("id", id)); await reloadRecipes(); }
+    };
+  }
+
   async function initStore(){
     let db = null, user = null;
     try { [db, user] = await Promise.all([claude.use("db"), claude.use("user")]); } catch {}
+    const cfg = window.DIARIO_SUPABASE;
+    if ((!db || !user) && cfg?.url && cfg?.key) {
+      try { store = await supabaseStore(cfg); }
+      catch { say("Não consegui conectar ao banco de dados. Confira a internet e recarregue a página.", true); }
+      return;
+    }
     if (!db || !user) { store = localStore(); say("Modo local: seus registros ficam só neste navegador."); return; }
     const uid = await user.id();
     const base = "data/users/" + uid;
