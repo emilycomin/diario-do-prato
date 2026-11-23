@@ -520,9 +520,10 @@ body{position:relative;overflow-x:hidden}
       async limits(){ return {images:true}; },
       async json(prompt, opts = {}){
         const images = await Promise.all((opts.images || []).map(async b => ({mime: b.type || "image/jpeg", data: await blobToB64(b)})));
-        const { data, error } = await sb.functions.invoke("analisar", {body:{prompt, images}, signal: opts.signal});
+        const { data, error } = await sb.functions.invoke("analisar", {body:{prompt, images}, signal: opts.signal, timeout: 120000});
         if (error) {
-          let code = "error"; try { code = (await error.context.json()).error || code; } catch {}
+          let code = error.name === "FunctionsFetchError" ? (opts.signal?.aborted ? "cancelled" : "timeout") : "error";
+          try { code = (await error.context.json()).error || code; } catch {}
           const e = new Error(code); e.code = code; throw e;
         }
         return data?.data;
@@ -647,7 +648,8 @@ body{position:relative;overflow-x:hidden}
       c === "missing_key" ? "A análise de fotos ainda não foi configurada: falta a chave do Gemini no Supabase." :
       c === "invalid_key" ? "A chave do Gemini configurada no Supabase foi recusada. Confira a chave." :
       c === "not_signed_in" ? "Sua sessão expirou. Saia e entre de novo." :
-      c === "gemini_error" ? "O Gemini não respondeu agora. Tente de novo em instantes." : fallback;
+      c === "gemini_error" ? "O Gemini não respondeu agora. Tente de novo em instantes." :
+      c === "gemini_timeout" || c === "timeout" ? "A análise demorou demais e foi cancelada. Tente de novo." : fallback;
   }
   function claudeErr(e, what){
     if (e?.code === "cancelled") return;

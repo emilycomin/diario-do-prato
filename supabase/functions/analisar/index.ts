@@ -18,6 +18,11 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return reply(405, { error: "method_not_allowed" });
 
+  // Lê o corpo inteiro antes de qualquer resposta: responder sem ler um corpo grande deixa a conexão pendurada.
+  let raw = "";
+  try { raw = await req.text(); } catch { return reply(400, { error: "bad_request" }); }
+  console.log("pedido recebido", Math.round(raw.length / 1024) + " KB");
+
   // 1. Confere se quem chamou está logado (token de sessão do Supabase Auth).
   const auth = req.headers.get("authorization") ?? "";
   const apikey = req.headers.get("apikey") ?? "";
@@ -30,7 +35,7 @@ Deno.serve(async (req: Request) => {
 
   // 2. Valida o pedido.
   let body: { prompt?: unknown; images?: unknown };
-  try { body = await req.json(); } catch { return reply(400, { error: "bad_request" }); }
+  try { body = JSON.parse(raw); } catch { return reply(400, { error: "bad_request" }); }
   const prompt = typeof body.prompt === "string" ? body.prompt : "";
   const images = Array.isArray(body.images) ? body.images.slice(0, 2) : [];
   if (!prompt || prompt.length > MAX_PROMPT) return reply(400, { error: "bad_request" });
@@ -43,14 +48,22 @@ Deno.serve(async (req: Request) => {
 
   // 3. Chama o Gemini pedindo resposta em JSON.
   const model = Deno.env.get("GEMINI_MODEL") || "gemini-flash-latest";
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+  let r: Response;
+  try {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
       contents: [{ role: "user", parts }],
       generationConfig: { responseMimeType: "application/json", temperature: 0.2 },
     }),
+    signal: AbortSignal.timeout(90_000),
   });
+  } catch (e) {
+    console.error("gemini sem resposta", String(e));
+    return reply(504, { error: "gemini_timeout" });
+  }
+  console.log("gemini respondeu", r.status);
   if (r.status === 429) return reply(429, { error: "rate_limited" });
   if (!r.ok) {
     const t = await r.text();
