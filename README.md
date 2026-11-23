@@ -46,7 +46,7 @@ e abra <http://localhost:8000>. Abrir o arquivo direto (`file://`) não funciona
 ```
 index.html                    o app inteiro (HTML, CSS e JavaScript)
 config.js                     endereço e chave pública do Supabase (apague para usar o modo local)
-img/*.svg                     ilustrações originais em estilo giz pastel oleoso (SVG com filtro de textura)
+img/*.png                     ilustrações em giz pastel oleoso desenhadas pela autora (fundo transparente)
 data/taco.json                Tabela TACO: 597 linhas
                               [id, nome, categoria, kcal, proteína, carbo, gordura, fibra, sódio_mg] por 100 g
 data/off/00.json … 99.json    Open Food Facts (≈29,5 mil produtos vendidos no Brasil),
@@ -61,7 +61,8 @@ data/LICENSE-tabela_taco.txt  licença MIT da conversão da TACO
 - **Open Food Facts** ([openfoodfacts.org](https://world.openfoodfacts.org)): cópia de novembro de 2026 dos produtos com `en:brazil` em `countries_tags`. Base de dados sob a [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/); conteúdo dos registros sob a [Database Contents License](https://opendatacommons.org/licenses/dbcl/1-0/). Os arquivos em `data/off/` são uma base derivada e seguem a ODbL.
 - **ZXing** ([zxing-js/library](https://github.com/zxing-js/library), Apache 2.0): leitura de código de barras, carregado do jsDelivr quando o navegador não tem `BarcodeDetector`.
 - **supabase-js** ([supabase/supabase-js](https://github.com/supabase/supabase-js), MIT): carregado do jsDelivr só quando o `config.js` existe.
-- Fontes tipográficas Bricolage Grotesque e Inter, via Google Fonts (SIL Open Font License).
+- Fontes tipográficas Open Sans e Caveat Brush, via Google Fonts (SIL Open Font License).
+- **Ilustrações** (`img/`): desenhadas pela autora do projeto. Todos os direitos reservados; não estão cobertas por nenhuma licença aberta.
 
 ## Aviso
 

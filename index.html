@@ -2,25 +2,25 @@
 <title>Diário do Prato</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=Caveat+Brush&display=swap">
 <style>
 /* Layout: single mobile-first column — today's ring summary, add-food card (plate photo / barcode / TACO search) feeding one meal draft, meal log, 7-day strip */
 :root{
-  /* Paleta: creme #fff1d0 (fundo), azul-marinho #03045e (principal), vermelho #d93713 (detalhes); ilustrações em giz pastel em img/ */
-  --bg:#fff1d0; --surface:#fffaeb; --ink:#03045e; --muted:#4e5080; --line:#efd9a8;
-  --accent:#03045e; --accent-ink:#fff1d0; --citrus:#e8a33d; --soft:#fbe4b0; --warn:#d93713;
-  --red:#d93713; --blue-soft:#e6e6f4; --gingham:rgb(226 176 92 / .16);
-  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
-  --body:"Inter",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  /* Paleta: creme #fff1d0 (fundo), azul #1a1650 (principal), vermelho #d93713 (detalhes); ilustrações em giz pastel oleoso da autora em img/ */
+  --bg:#fff1d0; --surface:#fffaeb; --ink:#1a1650; --muted:#55527e; --line:#efd9a8;
+  --accent:#1a1650; --accent-ink:#fff1d0; --citrus:#e8a33d; --soft:#fbe4b0; --warn:#d93713;
+  --red:#d93713; --blue-soft:#e8e6f3; --gingham:rgb(226 176 92 / .16);
+  --display:"Open Sans",ui-sans-serif,system-ui,sans-serif;
+  --body:"Open Sans",ui-sans-serif,system-ui,-apple-system,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#02033f; --surface:#0b0d55; --ink:#fff1d0; --muted:#c9c2ad; --line:#272a7a;
-  --accent:#fff1d0; --accent-ink:#03045e; --citrus:#f0b44f; --soft:#171a66; --warn:#ff6b42;
-  --red:#ff6b42; --blue-soft:#1c1f6e; --gingham:rgb(255 241 208 / .035); color-scheme:dark}}
+  --bg:#110e36; --surface:#1c1850; --ink:#fff1d0; --muted:#cbc3ae; --line:#2f2a70;
+  --accent:#fff1d0; --accent-ink:#1a1650; --citrus:#f0b44f; --soft:#262061; --warn:#ff6b42;
+  --red:#ff6b42; --blue-soft:#29236c; --gingham:rgb(255 241 208 / .035); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#02033f; --surface:#0b0d55; --ink:#fff1d0; --muted:#c9c2ad; --line:#272a7a;
-  --accent:#fff1d0; --accent-ink:#03045e; --citrus:#f0b44f; --soft:#171a66; --warn:#ff6b42;
-  --red:#ff6b42; --blue-soft:#1c1f6e; --gingham:rgb(255 241 208 / .035); color-scheme:dark}
+  --bg:#110e36; --surface:#1c1850; --ink:#fff1d0; --muted:#cbc3ae; --line:#2f2a70;
+  --accent:#fff1d0; --accent-ink:#1a1650; --citrus:#f0b44f; --soft:#262061; --warn:#ff6b42;
+  --red:#ff6b42; --blue-soft:#29236c; --gingham:rgb(255 241 208 / .035); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background-color:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;
@@ -28,7 +28,7 @@ body{background-color:var(--bg);color:var(--ink);font-family:var(--body);font-si
 .wrap{max-width:560px;margin:0 auto;padding-block:20px 48px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   display:flex;flex-direction:column;gap:20px}
-h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1,h2,h3{font-family:var(--display);font-weight:800;margin:0;text-wrap:balance;letter-spacing:-.01em}
 h1{font-size:1.7rem;color:var(--red)}
 h2{font-size:1.15rem}
 .num{font-variant-numeric:tabular-nums}
@@ -73,11 +73,11 @@ header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:12px;b
 .drop{border:2px dashed color-mix(in srgb,var(--accent) 30%,var(--line));border-radius:14px;padding:20px;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
 .drop.has{padding:0;border-style:solid;overflow:hidden}
 .drop img{width:100%;max-height:300px;object-fit:cover;display:block}
-.drop img.plate-ico{width:112px;height:auto;max-height:none;object-fit:contain}
+.drop img.plate-ico{width:128px;height:auto;max-height:none;object-fit:contain}
 .ilu{display:block;height:auto;user-select:none;pointer-events:none}
 h1{display:flex;align-items:center;gap:6px}
-h1 .ilu{width:30px;margin-top:-10px;transform:rotate(8deg)}
-.empty .ilu{width:120px;margin:0 auto 8px}
+h1 .ilu{height:48px;width:auto;margin-top:-12px;transform:rotate(8deg)}
+.empty .ilu{height:110px;width:auto;margin:0 auto 8px}
 .doodles{display:flex;justify-content:center;align-items:flex-end;gap:14px;flex-wrap:wrap}
 .doodles .ilu{height:46px;width:auto}
 .doodles .ilu:nth-child(odd){transform:rotate(-8deg)}.doodles .ilu:nth-child(even){transform:rotate(7deg)}
@@ -172,12 +172,40 @@ textarea{resize:vertical;min-height:44px}
 .linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:4px 0;text-decoration:underline;text-underline-offset:3px}
 .acct{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap;margin-top:-12px;overflow-wrap:anywhere}
 .authlinks{display:flex;gap:16px;flex-wrap:wrap}
-@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+/* elementos flutuantes atrás do conteúdo */
+body{position:relative;overflow-x:hidden}
+.wrap{position:relative;z-index:1}
+.floaters{position:absolute;top:0;bottom:0;left:50%;width:min(100%,880px);transform:translateX(-50%);overflow:hidden;pointer-events:none;z-index:0}
+.fl{position:absolute;display:block;transform:translate3d(0,var(--py,0px),0);will-change:transform}
+.fl img{display:block;width:100%;height:auto;animation:bob var(--d,7s) ease-in-out var(--dl,0s) infinite alternate}
+@keyframes bob{from{transform:translateY(-7px) rotate(calc(var(--r,0deg) - 6deg))}to{transform:translateY(9px) rotate(calc(var(--r,0deg) + 6deg))}}
+/* palavras que reagem */
+.gizword text{font-family:"Caveat Brush","Comic Sans MS",cursive;font-size:96px}
+.shout{position:fixed;left:50%;top:34%;z-index:50;pointer-events:none;background:#fff1d0;padding:12px 22px;border-radius:22px;border:2px solid #efd9a8;box-shadow:0 16px 34px -12px rgb(26 22 80 / .5);animation:shout 1.9s cubic-bezier(.2,.8,.2,1) forwards}
+.shout img,.shout svg{display:block;height:auto}
+.shout .ilu{background:none!important;padding:0!important}
+.shout text{fill:#d93713}
+@keyframes shout{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-16deg)}16%{opacity:1;transform:translate(-50%,-50%) scale(1.14) rotate(-5deg)}28%{transform:translate(-50%,-50%) scale(1) rotate(-8deg)}72%{opacity:1;transform:translate(-50%,-62%) scale(1) rotate(-5deg)}100%{opacity:0;transform:translate(-50%,-120%) scale(.9) rotate(-2deg)}}
+.summary{position:relative}
+.panic-tag{position:absolute;top:-22px;right:6px;width:128px;pointer-events:none;animation:wiggle 1.1s ease-in-out infinite}
+@keyframes wiggle{0%,100%{transform:rotate(9deg)}25%{transform:rotate(4deg) translateX(-2px)}75%{transform:rotate(14deg) translateX(2px)}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}.fl img,.panic-tag{animation:none}.fl{transform:none}
+  .shout{animation:shoutfade 1.9s forwards}}
+@keyframes shoutfade{0%,80%{opacity:1;transform:translate(-50%,-50%) rotate(-6deg)}100%{opacity:0;transform:translate(-50%,-50%) rotate(-6deg)}}
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<filter id="giz" x="-10%" y="-20%" width="120%" height="140%">
+<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="w"/>
+<feDisplacementMap in="SourceGraphic" in2="w" scale="4" xChannelSelector="R" yChannelSelector="G" result="d"/>
+<feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="1" seed="9" result="n"/>
+<feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -2.4 0 0 0 2.2" result="m"/>
+<feComposite in="d" in2="m" operator="in"/>
+</filter></defs></svg>
+<div class="floaters" aria-hidden="true"><span class="fl" data-p="0.1" style="top:6%;left:-16px;width:62px;--r:-8deg;--d:7s;--dl:0s"><img src="img/tomate.png" alt=""></span><span class="fl" data-p="-0.06" style="top:2.5%;right:10px;width:44px;--r:10deg;--d:5.5s;--dl:-2s"><img src="img/brilho-laranja.png" alt=""></span><span class="fl" data-p="0.14" style="top:17%;right:-22px;width:58px;--r:-14deg;--d:8s;--dl:-1s"><img src="img/limao.png" alt=""></span><span class="fl" data-p="-0.08" style="top:29%;left:-24px;width:64px;--r:12deg;--d:6.5s;--dl:-3s"><img src="img/flor-amarela.png" alt=""></span><span class="fl" data-p="0.12" style="top:41%;right:-14px;width:50px;--r:8deg;--d:7.5s;--dl:-4s"><img src="img/morango.png" alt=""></span><span class="fl" data-p="-0.05" style="top:51%;left:6px;width:38px;--r:0deg;--d:6s;--dl:-1.5s"><img src="img/brilho-azul.png" alt=""></span><span class="fl" data-p="0.09" style="top:61%;right:-28px;width:72px;--r:-10deg;--d:9s;--dl:-2.5s"><img src="img/camarao.png" alt=""></span><span class="fl" data-p="-0.1" style="top:73%;left:-34px;width:82px;--r:-6deg;--d:7s;--dl:-5s"><img src="img/flor-vermelha.png" alt=""></span><span class="fl" data-p="0.07" style="top:84%;right:8px;width:42px;--r:14deg;--d:6s;--dl:-3.5s"><img src="img/brilho-roxo.png" alt=""></span><span class="fl" data-p="-0.06" style="top:93%;left:-8px;width:52px;--r:-18deg;--d:8.5s;--dl:-1s"><img src="img/azeitona.png" alt=""></span></div>
 <div class="wrap">
   <header>
-    <h1>Diário do Prato <img class="ilu" src="img/flores.svg" alt=""></h1>
+    <h1>Diário do Prato <img class="ilu" src="img/flores.png" alt=""></h1>
     <div class="daynav" id="daynav">
       <button class="iconbtn" id="prevDay" aria-label="Dia anterior">‹</button>
       <span class="d" id="dayLabel">Hoje</span>
@@ -188,7 +216,7 @@ textarea{resize:vertical;min-height:44px}
   <div class="acct small muted" id="acct" hidden><span id="acctEmail"></span><span aria-hidden="true">·</span><button class="linkbtn" id="signOut" type="button">Sair</button></div>
 
   <section class="card capture" id="authBox" aria-labelledby="authH" hidden>
-    <div class="doodles auth-doodles" aria-hidden="true"><img class="ilu" src="img/tomate.svg" alt=""><img class="ilu" src="img/taca.svg" alt=""><img class="ilu" src="img/limao.svg" alt=""><img class="ilu" src="img/camarao.svg" alt=""></div>
+    <div class="doodles auth-doodles" aria-hidden="true"><img class="ilu" src="img/tomate.png" alt=""><img class="ilu" src="img/taca.png" alt=""><img class="ilu" src="img/limao.png" alt=""><img class="ilu" src="img/camarao.png" alt=""></div>
     <h2 id="authH">Entrar</h2>
     <p class="small muted hint" id="authHint">Entre com seu e-mail e senha para ver o seu diário em qualquer aparelho.</p>
     <form class="panel" id="authForm">
@@ -211,6 +239,7 @@ textarea{resize:vertical;min-height:44px}
   <div class="view" id="v-diario" role="tabpanel">
 
   <section class="card summary" aria-label="Resumo do dia">
+    <svg class="panic-tag gizword" id="panicTag" viewBox="0 0 280 120" aria-hidden="true" hidden><text x="140" y="88" text-anchor="middle" fill="var(--red)" filter="url(#giz)">PANIC!</text></svg>
     <div class="ring">
       <svg viewBox="0 0 120 120" aria-hidden="true">
         <circle cx="60" cy="60" r="52" fill="none" stroke="var(--soft)" stroke-width="12"/>
@@ -240,7 +269,7 @@ textarea{resize:vertical;min-height:44px}
 
     <div class="panel" id="p-prato" role="tabpanel">
       <div class="drop" id="drop">
-        <img class="ilu plate-ico" src="img/prato.svg" alt="">
+        <img class="ilu plate-ico" src="img/torrada.png" alt="">
         <div>Tire uma foto do prato de cima, com o prato inteiro visível.</div>
         <div class="row" style="width:100%;justify-content:center"><label class="btn" for="cam">Tirar foto</label><label class="btn ghost" for="photo">Escolher da galeria</label></div>
       </div>
@@ -301,7 +330,7 @@ textarea{resize:vertical;min-height:44px}
 
   <section class="log" aria-labelledby="logH">
     <h2 id="logH">Refeições do dia</h2>
-    <div id="mealList"><div class="empty"><img class="ilu" src="img/torrada.svg" alt="">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div></div>
+    <div id="mealList"><div class="empty"><img class="ilu" src="img/talheres.png" alt="">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div></div>
   </section>
 
   <section class="card week" aria-labelledby="weekH">
@@ -315,7 +344,7 @@ textarea{resize:vertical;min-height:44px}
     <section class="card rsec" id="recList" aria-labelledby="recH">
       <div class="dhead"><h2 id="recH">Minhas receitas</h2><button class="btn sm" id="recNew" type="button">Nova receita</button></div>
       <div class="status" id="rListStatus" role="status"></div>
-      <div class="rlist" id="recItems"><div class="empty"><img class="ilu" src="img/azeitonas.svg" alt="" style="width:56px">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div></div>
+      <div class="rlist" id="recItems"><div class="empty"><img class="ilu" src="img/azeitonas.png" alt="">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div></div>
     </section>
 
     <section class="card rsec" id="recEd" aria-labelledby="recEdH" hidden>
@@ -349,7 +378,7 @@ textarea{resize:vertical;min-height:44px}
     </section>
   </div>
 
-  <div class="doodles" aria-hidden="true"><img class="ilu" src="img/tomate.svg" alt=""><img class="ilu" src="img/talheres.svg" alt=""><img class="ilu" src="img/brilho-vermelho.svg" alt=""><img class="ilu" src="img/limao.svg" alt=""><img class="ilu" src="img/taca.svg" alt=""><img class="ilu" src="img/camarao.svg" alt=""></div>
+  <div class="doodles" aria-hidden="true"><img class="ilu" src="img/tacas-champanhe.png" alt="" style="height:64px"><img class="ilu" src="img/salud.png" alt="" style="height:34px"></div>
   <p class="note">Fontes: Tabela TACO (NEPA/Unicamp, 4ª ed.), Open Food Facts (cópia dos produtos vendidos no Brasil, novembro de 2026) e leitura do rótulo pelo Claude. Pela foto do prato, porções, óleo e molhos são estimados: ajuste os gramas se souber o peso. Não substitui orientação de nutricionista.</p>
 </div>
 
@@ -368,6 +397,30 @@ textarea{resize:vertical;min-height:44px}
   let draft = null;
   let thumbUrl = null, plateBlob = null;
   let store = null, sample = null;
+
+  // ---------- palavras e elementos flutuantes ----------
+  const SHOUTS = {
+    cheers: {img:"img/cheers.png", w:170},
+    salud:  {img:"img/salud.png", w:230},
+    panic:  {text:"PANIC!", w:260}
+  };
+  function shout(k){
+    const c = SHOUTS[k]; if (!c) return;
+    document.querySelectorAll(".shout").forEach(e => e.remove());
+    const el = document.createElement("div"); el.className = "shout"; el.setAttribute("aria-hidden", "true");
+    el.innerHTML = c.img ? `<img class="ilu" src="${c.img}" alt="" style="width:${c.w}px">`
+      : `<svg class="gizword" viewBox="0 0 280 120" style="width:${c.w}px"><text x="140" y="88" text-anchor="middle" fill="var(--red)" filter="url(#giz)">${c.text}</text></svg>`;
+    document.body.append(el);
+    setTimeout(() => el.remove(), 2000);
+  }
+  {
+    const fls = [...document.querySelectorAll(".fl")];
+    const still = matchMedia("(prefers-reduced-motion: reduce)");
+    let ticking = false;
+    const move = () => { ticking = false; if (still.matches) return;
+      const y = scrollY; fls.forEach(f => f.style.setProperty("--py", (y * (+f.dataset.p || 0)).toFixed(1) + "px")); };
+    addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(move); } }, {passive:true});
+  }
 
   function say(t, err){ const s=$("status"); s.textContent = t||""; s.classList.toggle("err", !!err); }
 
@@ -882,7 +935,8 @@ Responda SOMENTE com JSON:
       thumb: thumbUrl || ""
     };
     $("save").disabled = true;
-    try { await store.save(m); resetCapture(); say("Salvo no diário."); }
+    const prevK = meals.filter(x => x.day === m.day).reduce((a, x) => a + (x.kcal || 0), 0);
+    try { await store.save(m); resetCapture(); say("Salvo no diário."); shout(prevK <= goal && prevK + m.kcal > goal ? "panic" : "cheers"); }
     catch(e){ say("Não consegui salvar ("+(e?.code||"erro")+"). Tente de novo.", true); }
     finally { $("save").disabled = false; }
   };
@@ -908,6 +962,7 @@ Responda SOMENTE com JSON:
     const arc = $("ringArc"); arc.setAttribute("stroke-dasharray", `${frac*C} ${C}`);
     arc.setAttribute("stroke", t.k>goal ? "var(--warn)" : "var(--accent)");
     arc.style.opacity = t.k > 0 ? 1 : 0;
+    $("panicTag").toggleAttribute("hidden", !(t.k > goal));
     $("remaining").textContent = t.k>goal ? `${fmt(t.k-goal)} kcal acima da meta` : `faltam ${fmt(goal-t.k)} de ${fmt(goal)} kcal`;
     const ref = {p: goal*.2/4, c: goal*.5/4, g: goal*.3/9};
     $("barP").style.width = Math.min(100,t.p/ref.p*100)+"%"; $("gP").textContent = fmt(t.p)+" g";
@@ -915,7 +970,7 @@ Responda SOMENTE com JSON:
     $("barG").style.width = Math.min(100,t.g/ref.g*100)+"%"; $("gG").textContent = fmt(t.g)+" g";
 
     const list = $("mealList"); list.innerHTML = "";
-    if (!dm.length) list.innerHTML = `<div class="empty"><img class="ilu" src="img/torrada.svg" alt="">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div>`;
+    if (!dm.length) list.innerHTML = `<div class="empty"><img class="ilu" src="img/talheres.png" alt="">Nenhuma refeição registrada neste dia. Adicione seu prato acima para começar.</div>`;
     else { const wrap = document.createElement("div"); wrap.className="log"; list.append(wrap);
       dm.forEach(m => {
         const el = document.createElement("article"); el.className = "meal";
@@ -984,7 +1039,7 @@ Responda SOMENTE com JSON:
 
   function renderRecipes(){
     const box = $("recItems"); box.innerHTML = "";
-    if (!recipes.length) { box.innerHTML = `<div class="empty"><img class="ilu" src="img/azeitonas.svg" alt="" style="width:56px">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div>`; return; }
+    if (!recipes.length) { box.innerHTML = `<div class="empty"><img class="ilu" src="img/azeitonas.png" alt="">Nenhuma receita ainda. Toque em "Nova receita" para cadastrar a primeira.</div>`; return; }
     [...recipes].sort((a,b)=>String(a.nome||"").localeCompare(String(b.nome||""),"pt")).forEach(r => {
       const el = document.createElement("article"); el.className = "rcard";
       const porc = +r.porcoes || 1;
@@ -1167,7 +1222,7 @@ ${tacoList}`;
       kcal: Math.round(t.kcal), p: r1(t.p), c: r1(t.c), g: r1(t.g), updated: Date.now()
     };
     $("rSave").disabled = true;
-    try { await store.saveRecipe(rec.id, doc); closeEditor(); $("rListStatus").textContent = "Receita salva."; }
+    try { await store.saveRecipe(rec.id, doc); closeEditor(); $("rListStatus").textContent = "Receita salva."; shout("salud"); }
     catch (e) { rsay("Não consegui salvar a receita (" + (e?.code||"erro") + "). Tente de novo.", true); }
     finally { $("rSave").disabled = false; }
   };
